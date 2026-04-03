@@ -1,0 +1,143 @@
+/* =============================================
+   TOP NAVBAR STYLES
+   - Navbar atas dengan search, notif, dan profil
+   - Responsif: hamburger menu muncul di mobile
+   ============================================= */
+
+.top-navbar {
+  width: 100%;
+  z-index: 1050;
+  /* Override position:fixed dari main.css (.navbar) biar navbar gak nabrak konten */
+  position: relative !important;
+  background-color: #ffffff !important;
+}
+
+.top-navbar .container-fluid {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  padding-right: 40px !important;
+}
+
+/* Pastikan area ikon tidak mengecil saat didorong search bar */
+.nav-icons,
+.top-navbar .navbar-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-shrink: 0 !important;
+  align-items: center;
+}
+
+/* Tombol hamburger untuk buka sidebar di mobile */
+.hamburger-btn {
+  background: none;
+  border: none;
+  color: #334155;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  margin-right: 12px;
+  transition: all 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Container ikon (Lonceng & Pesan) */
+.icon-wrapper {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border-radius: 12px !important;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.icon-wrapper:hover {
+  background-color: #e2e8f0;
+  transform: scale(1.05);
+}
+
+/* Titik notifikasi hijau dengan animasi pulse */
+.notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse 2s infinite;
+  /* Animasi kedip-kedip */
+}
+
+/* Animasi pulse untuk titik notifikasi */
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.4);
+    opacity: 0.7;
+  }
+}
+
+/* Avatar bulat hijau kecil di navbar */
+.avatar-small {
+  width: 40px !important;
+  height: 40px !important;
+  background: #22c55e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: box-shadow 0.2s;
+}
+
+.avatar-small:hover {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}
+
+/* Hilangkan caret default Bootstrap di dropdown profil */
+.profile-dropdown .dropdown-toggle::after {
+  display: none !important;
+}
+
+.profile-dropdown .dropdown-menu {
+  z-index: 9999 !important;
+  position: absolute !important;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.profile-dropdown .dropdown-item {
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: background 0.15s;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* =============================================
+   RESPONSIVE: Mobile (<768px)
+   ============================================= */
+@media (max-width: 767px) {
+  .top-navbar .container-fluid {
+    padding-right: 16px !important;
+    padding-left: 12px !important;
+  }
+}

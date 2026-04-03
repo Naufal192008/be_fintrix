@@ -1,0 +1,62 @@
+/* analityc.css */
+
+.bg-slate-50 {
+  background-color: #f8fafc;
+}
+
+.an-card {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02) !important;
+}
+
+.an-card-title {
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.an-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.an-trend-banner {
+  background-color: #ecfdf5;
+  border-radius: 99px;
+  padding: 8px 16px;
+}
+
+/* Financial Insights */
+.an-insight-box {
+  padding: 20px 16px;
+  border-radius: 12px;
+  border-left: 6px solid;
+}
+
+.insight-warning {
+  background-color: #ffedd5;
+  border-color: #f59e0b;
+}
+
+.insight-good {
+  background-color: #dcfce7;
+  border-color: #22c55e;
+}
+
+.insight-suggestion {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.an-insight-icon {
+  margin-top: 2px;
+}
+
+.an-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

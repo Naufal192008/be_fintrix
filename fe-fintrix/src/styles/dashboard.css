@@ -1,0 +1,301 @@
+/* =============================================
+   DASHBOARD CSS
+   - Layout utama dashboard
+   - Kartu ringkasan (summary cards)
+   - Chart area
+   - Tabel transaksi
+   - Circular progress (saving goals)
+   - Animasi & responsive
+   ============================================= */
+
+/* Layout dashboard: geser konten ke kanan sesuai lebar sidebar */
+.dashboard-layout {
+  margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f4f6fb;
+}
+
+.dashboard-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 8px;
+  /* Sedikit jarak dari navbar atas */
+}
+
+/* =============================================
+   KARTU RINGKASAN (Summary Cards)
+   Cards di baris paling atas dashboard
+   ============================================= */
+.summary-card {
+  border-radius: 16px;
+  min-height: 120px;
+  overflow: hidden;
+
+  /* Animasi fadeInUp saat pertama muncul */
+  animation: fadeInUp 0.5s ease both;
+
+  /* Efek hover: angkat sedikit + bayangan */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Label kecil di atas angka (contoh: "Total Balance") */
+.summary-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+/* Angka besar (contoh: "$24,580") */
+.summary-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+/* Ikon di sudut kanan atas kartu */
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Badge persentase (contoh: "+12%") */
+.summary-pill {
+  font-size: 0.78rem;
+  background-color: rgba(34, 197, 94, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.summary-pill.text-danger {
+  background-color: rgba(244, 63, 94, 0.08);
+}
+
+/* =============================================
+   DASHBOARD CARDS (umum)
+   Styling kartu chart, transaksi, dll
+   ============================================= */
+.dashboard-card {
+  border-radius: 16px;
+  border: none;
+  background-color: #ffffff !important;
+  /* Pastikan background putih */
+  color: #0f172a;
+  /* Teks warna gelap */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* =============================================
+   TITIK WARNA KATEGORI (Spending Categories)
+   Bulatan kecil di samping nama kategori
+   ============================================= */
+.category-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* =============================================
+   TABEL TRANSAKSI
+   ============================================= */
+
+/* Ikon di kolom transaksi */
+.transaction-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+/* Baris transaksi: efek highlight saat hover */
+.transaction-row {
+  transition: background-color 0.15s ease;
+}
+
+.transaction-row:hover .transaction-icon {
+  transform: scale(1.1);
+}
+
+/* Badge status (Completed / Pending) */
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* =============================================
+   SAVING GOALS - Circular Progress (SVG)
+   Lingkaran progress custom pake SVG
+   ============================================= */
+.circular-progress {
+  flex-shrink: 0;
+}
+
+/* Lingkaran SVG yang terisi (hijau) */
+.progress-circle {
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 1s ease;
+
+  /* Animasi isi lingkaran saat pertama load */
+  animation: fillCircle 1.5s ease forwards;
+}
+
+/* Angka persentase di tengah lingkaran */
+.progress-text {
+  font-size: 1.4rem;
+  font-weight: 700;
+  fill: #0f172a;
+}
+
+/* Teks "Completed" di bawah persentase */
+.progress-subtext {
+  font-size: 0.65rem;
+  fill: #64748b;
+}
+
+/* Tombol "Add to Savings" */
+.btn-add-savings {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.btn-add-savings:hover {
+  background: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+}
+
+.btn-add-savings:active {
+  transform: translateY(0);
+}
+
+/* =============================================
+   ANIMASI KEYFRAMES
+   ============================================= */
+
+/* Animasi masuk dari bawah + fade in */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animasi isi lingkaran progress */
+@keyframes fillCircle {
+  from {
+    stroke-dashoffset: 326.73;
+    /* circumference penuh = 2 * PI * 52 */
+  }
+}
+
+/* =============================================
+   RESPONSIVE: Tablet (<992px)
+   Sidebar jadi drawer, layout full width
+   ============================================= */
+@media (max-width: 991px) {
+  .dashboard-layout {
+    margin-left: 0;
+  }
+}
+
+/* =============================================
+   RESPONSIVE: Mobile (<768px)
+   Kartu dan chart menyesuaikan layar kecil
+   ============================================= */
+@media (max-width: 767px) {
+  .summary-card {
+    margin-bottom: 0;
+  }
+
+  .summary-value {
+    font-size: 1.15rem;
+  }
+
+  .summary-label {
+    font-size: 0.75rem;
+  }
+
+  .summary-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .summary-pill {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  /* Tabel transaksi nggak terlalu lebar */
+  .transaction-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+  }
+
+  .circular-progress svg {
+    width: 100px;
+    height: 100px;
+  }
+
+  .progress-text {
+    font-size: 1.1rem;
+  }
+}
+
+/* =============================================
+   RESPONSIVE: HP Kecil (<480px)
+   ============================================= */
+@media (max-width: 480px) {
+  .summary-value {
+    font-size: 1rem;
+  }
+
+  .dashboard-main {
+    padding: 12px !important;
+  }
+}
