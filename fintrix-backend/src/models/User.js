@@ -1,119 +1,101 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const validator = require('validator');
+require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const session = require("express-session");
+const cors = require("cors");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Name is required'],
-    trim: true,
-    minlength: [2, 'Name must be at least 2 characters'],
-    maxlength: [50, 'Name cannot exceed 50 characters']
-  },
-  email: {
-    type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    validate: [validator.isEmail, 'Please provide a valid email']
-  },
-  password: {
-    type: String,
-    required: function() {
-      return !this.googleId; // Password required only if not using Google
-    },
-    minlength: [8, 'Password must be at least 8 characters'],
-    select: false
-  },
-  googleId: {
-    type: String,
-    unique: true,
-    sparse: true
-  },
-  avatar: {
-    type: String,
-    default: ''
-  },
-  provider: {
-    type: String,
-    enum: ['local', 'google'],
-    default: 'local'
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  twoFactorEnabled: {
-    type: Boolean,
-    default: false
-  },
-  twoFactorSecret: {
-    type: String,
-    select: false
-  },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  emailVerificationToken: String,
-  emailVerificationExpire: Date,
-  lastLogin: Date,
-  loginAttempts: {
-    type: Number,
-    default: 0
-  },
-  lockUntil: Date,
-  refreshToken: {
-    type: String,
-    select: false
+// Import Models & Routes
+const User = require('./src/models/User');
+const transactionRoutes = require('./src/routes/transactionRoutes');
+const budgetRoutes = require('./src/routes/budgetRoutes');
+const investmentRoutes = require('./src/routes/investmentRoutes');
+const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
+
+const app = express();
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ Fintrix DB Connected"))
+  .catch(err => console.log("❌ DB Error:", err));
+
+// Middleware
+app.use(cors({
+  origin: "http://localhost:5173", 
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true, 
+}));
+app.use(express.json());
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || "fintrix_secret_key_2026",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, 
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000 
   }
-}, {
-  timestamps: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport Google Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:5050/api/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await User.findOne({ googleId: profile.id });
+      if (!user) {
+        user = await User.create({
+          googleId: profile.id,
+          name: profile.displayName,
+          email: profile.emails[0].value,
+          avatar: profile.photos[0].value,
+          provider: 'google',
+          isVerified: true
+        });
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err, null);
+    }
+  }
+));
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+  const user = await User.findById(id);
+  done(null, user);
 });
 
-// Encrypt password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+// --- ROUTES ---
+
+// Auth Routes
+app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account" }));
+app.get("/api/auth/google/callback", passport.authenticate("google", { failureRedirect: "http://localhost:5173/login" }), (req, res) => {
+  req.session.save(() => res.redirect("http://localhost:5173/dashboard"));
+});
+app.get("/api/auth/login/success", (req, res) => {
+  if (req.user) res.status(200).json({ success: true, user: req.user });
+  else res.status(401).json({ success: false });
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+// Feature Routes
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/investments', investmentRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/admin', adminRoutes); // Ini yang dipanggil Dashboard Admin
 
-// Check if account is locked
-userSchema.methods.isLocked = function() {
-  return !!(this.lockUntil && this.lockUntil > Date.now());
-};
-
-// Increment login attempts
-userSchema.methods.incLoginAttempts = function() {
-  // Reset attempts if lock has expired
-  if (this.lockUntil && this.lockUntil < Date.now()) {
-    return this.updateOne({
-      $set: { loginAttempts: 1 },
-      $unset: { lockUntil: 1 }
-    });
-  }
-  
-  // Increment attempts
-  const updates = { $inc: { loginAttempts: 1 } };
-  
-  // Lock account if max attempts reached
-  if (this.loginAttempts + 1 >= 5 && !this.isLocked()) {
-    updates.$set = { lockUntil: Date.now() + 2 * 60 * 60 * 1000 }; // Lock for 2 hours
-  }
-  
-  return this.updateOne(updates);
-};
-
-// Create index for token expiration
-userSchema.index({ resetPasswordExpire: 1 }, { expireAfterSeconds: 0 });
-userSchema.index({ emailVerificationExpire: 1 }, { expireAfterSeconds: 0 });
-
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+const PORT = 5050;
+app.listen(PORT, () => console.log(`🚀 Fintrix Super Server running on port ${PORT}`));
