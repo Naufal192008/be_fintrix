@@ -245,36 +245,59 @@
 
 /* =============================================
    RESPONSIVE: Mobile (<768px)
-   Kartu dan chart menyesuaikan layar kecil
    ============================================= */
 @media (max-width: 767px) {
+  .dashboard-main {
+    padding: 12px !important;
+  }
+
+  /* Summary cards */
   .summary-card {
     margin-bottom: 0;
+    min-height: 100px;
   }
 
   .summary-value {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
   }
 
   .summary-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   .summary-icon {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
   }
 
   .summary-pill {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     padding: 3px 8px;
   }
 
-  /* Tabel transaksi nggak terlalu lebar */
+  /* Charts: pastikan tinggi proporsional di mobile */
+  .dashboard-chart-wrap {
+    height: 220px !important;
+  }
+
+  /* Donut chart di mobile: lebih kecil */
+  .dashboard-donut-wrap {
+    width: 140px !important;
+    height: 140px !important;
+  }
+
+  /* Tabel transaksi */
   .transaction-icon {
-    width: 30px;
-    height: 30px;
-    margin-right: 8px;
+    width: 28px;
+    height: 28px;
+    margin-right: 6px;
+  }
+
+  /* Saving Goals: susun vertikal */
+  .saving-goals-inner {
+    flex-direction: column !important;
+    align-items: center;
+    gap: 1rem;
   }
 
   .circular-progress svg {
@@ -284,6 +307,30 @@
 
   .progress-text {
     font-size: 1.1rem;
+  }
+}
+
+/* =============================================
+   RESPONSIVE: HP Kecil (<480px)
+   ============================================= */
+@media (max-width: 480px) {
+  .summary-value {
+    font-size: 0.95rem;
+  }
+
+  .summary-label {
+    font-size: 0.65rem;
+  }
+
+  .summary-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  /* Stack the 4 cards 2x2 stays but reduce padding */
+  .summary-card .card-body {
+    padding: 10px !important;
   }
 }
 

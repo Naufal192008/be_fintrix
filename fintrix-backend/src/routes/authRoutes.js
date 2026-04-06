@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport');
 const { body } = require('express-validator');
 const {
   registerUser,
@@ -36,30 +35,22 @@ router.get('/verify-email/:token', verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 
-// Google OAuth routes
-// Route untuk memicu login Google
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// Note: Google OAuth routes (/google dan /google/callback)
+// sudah di-handle langsung di server.js dengan logic yang lebih lengkap
+// (JWT token generation + session save + redirect ke frontend)
 
-// Route CALLBACK (Ini yang paling penting!)
-router.get('/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: 'http://localhost:5173/login', // Ke hal login kalau gagal
-    session: true 
-  }),
-  (req, res) => {
-    // BERHASIL! Arahkan langsung ke halaman Dashboard (Vite port 5173)
-    res.redirect('http://localhost:5173/dashboard'); 
-  }
-);
-
-// Check auth status
+// Check auth status (via JWT)
 router.get('/status', protect, (req, res) => {
   res.json({ 
     isAuthenticated: true,
     user: {
       id: req.user._id,
       name: req.user.name,
-      email: req.user.email
+      email: req.user.email,
+      avatar: req.user.avatar,
+      isVerified: req.user.isVerified,
+      twoFactorEnabled: req.user.twoFactorEnabled,
+      provider: req.user.provider,
     }
   });
 });

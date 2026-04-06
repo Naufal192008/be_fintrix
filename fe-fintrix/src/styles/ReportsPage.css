@@ -1,0 +1,198 @@
+/* =============================================
+   ReportsPage.css – styles for the Reports page
+   ============================================= */
+
+/* ── Page Wrapper ──────────────────────────── */
+.reports-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.reports-layout {
+  overflow-x: hidden;
+}
+
+/* ── Page Header ───────────────────────────── */
+.reports-header h2 {
+  color: #1a1f36;
+  font-size: 1.75rem;
+}
+
+/* ── Cards (shared) ────────────────────────── */
+.reports-card {
+  border-radius: 16px !important;
+  border: none !important;
+}
+
+/* ── Report Filters ────────────────────────── */
+.reports-filter-icon {
+  color: #20c997;
+}
+
+.reports-btn-generate {
+  background-color: #20c997 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+}
+
+.reports-form-field {
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+/* ── Metric Cards ──────────────────────────── */
+.reports-metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.reports-metric-icon--income  { background-color: #e6fcf5; color: #20c997; }
+.reports-metric-icon--expense { background-color: #ffe8e6; color: #ff6b6b; }
+.reports-metric-icon--balance { background-color: #e7f5ff; color: #339af0; }
+
+.reports-metric-value--income  { color: #20c997 !important; }
+.reports-metric-value--expense { color: #ff6b6b !important; }
+.reports-metric-value--balance { color: #20c997 !important; }
+
+/* ── Category Report ───────────────────────── */
+.reports-category-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.reports-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reports-category-col {
+  flex-grow: 1;
+  min-width: 180px;
+}
+
+.reports-category-card {
+  border-radius: 12px !important;
+  border-color: #e9ecef !important;
+}
+
+.reports-category-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.reports-progress-bar-track {
+  height: 6px;
+  background-color: #f1f3f5;
+  border-radius: 10px;
+  flex-grow: 1;
+  margin-right: 0.5rem;
+}
+
+.reports-progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+}
+
+/* ── Monthly Report Table ──────────────────── */
+.reports-table-card {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.reports-table thead tr {
+  border-bottom: 2px solid #f1f3f5 !important;
+}
+
+.reports-table th {
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+.reports-table td {
+  white-space: nowrap;
+}
+
+.reports-table .income-positive { color: #20c997 !important; }
+.reports-table .income-dash     { color: #adb5bd !important; }
+.reports-table .expense-negative { color: #ff6b6b !important; }
+.reports-table .expense-dash    { color: #adb5bd !important; }
+
+.reports-table tr {
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.reports-table tr:last-child {
+  border-bottom: none;
+}
+
+/* ── Export Section ────────────────────────── */
+.reports-btn-pdf {
+  background-color: #ffffff !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  color: #495057 !important;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reports-btn-pdf:hover {
+  background-color: #f8f9fa !important;
+}
+
+.reports-btn-excel {
+  background-color: #20c997 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reports-btn-excel:hover {
+  background-color: #17a580 !important;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 767.98px) {
+  .reports-header h2    { font-size: 1.4rem; }
+  .reports-metric-icon  { width: 36px; height: 36px; }
+
+  .reports-export-row {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .reports-export-btn-group {
+    width: 100%;
+  }
+
+  .reports-export-btn-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .reports-category-col {
+    min-width: 160px;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.4rem;
+  }
+}

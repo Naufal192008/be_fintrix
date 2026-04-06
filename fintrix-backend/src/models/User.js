@@ -1,101 +1,135 @@
-require('dotenv').config();
-const express = require("express");
-const mongoose = require("mongoose");
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const session = require("express-session");
-const cors = require("cors");
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-// Import Models & Routes
-const User = require('./src/models/User');
-const transactionRoutes = require('./src/routes/transactionRoutes');
-const budgetRoutes = require('./src/routes/budgetRoutes');
-const investmentRoutes = require('./src/routes/investmentRoutes');
-const analyticsRoutes = require('./src/routes/analyticsRoutes');
-const aiRoutes = require('./src/routes/aiRoutes');
-const adminRoutes = require('./src/routes/adminRoutes');
-
-const app = express();
-
-// Database Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("✅ Fintrix DB Connected"))
-  .catch(err => console.log("❌ DB Error:", err));
-
-// Middleware
-app.use(cors({
-  origin: "http://localhost:5173", 
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true, 
-}));
-app.use(express.json());
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || "fintrix_secret_key_2026",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, 
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 24 * 60 * 60 * 1000 
-  }
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Passport Google Strategy
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:5050/api/auth/google/callback"
+const userSchema = new mongoose.Schema(
+  {
+    googleId: {
+      type: String,
+      default: null,
+    },
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      minlength: 6,
+      select: false,
+    },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    provider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    refreshToken: {
+      type: String,
+      default: null,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      select: false,
+    },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpire: {
+      type: Date,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpire: {
+      type: Date,
+    },
+    // Profile fields
+    phone: {
+      type: String,
+      default: '',
+    },
+    currency: {
+      type: String,
+      default: 'IDR',
+    },
+    language: {
+      type: String,
+      default: 'id',
+    },
+    notificationEmail: {
+      type: Boolean,
+      default: true,
+    },
+    notificationPush: {
+      type: Boolean,
+      default: true,
+    },
   },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      let user = await User.findOne({ googleId: profile.id });
-      if (!user) {
-        user = await User.create({
-          googleId: profile.id,
-          name: profile.displayName,
-          email: profile.emails[0].value,
-          avatar: profile.photos[0].value,
-          provider: 'google',
-          isVerified: true
-        });
-      }
-      return done(null, user);
-    } catch (err) {
-      return done(err, null);
-    }
+  {
+    timestamps: true,
   }
-));
+);
 
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
+// ─── Hash password before saving ───────────────────────────────────────────
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password') || !this.password) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-// --- ROUTES ---
+// ─── Compare entered password with hashed password ─────────────────────────
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
 
-// Auth Routes
-app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account" }));
-app.get("/api/auth/google/callback", passport.authenticate("google", { failureRedirect: "http://localhost:5173/login" }), (req, res) => {
-  req.session.save(() => res.redirect("http://localhost:5173/dashboard"));
-});
-app.get("/api/auth/login/success", (req, res) => {
-  if (req.user) res.status(200).json({ success: true, user: req.user });
-  else res.status(401).json({ success: false });
-});
+// ─── Check if account is locked ────────────────────────────────────────────
+userSchema.methods.isLocked = function () {
+  return this.lockUntil && this.lockUntil > Date.now();
+};
 
-// Feature Routes
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/investments', investmentRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/admin', adminRoutes); // Ini yang dipanggil Dashboard Admin
+// ─── Increment login attempts & lock if exceeded ───────────────────────────
+userSchema.methods.incLoginAttempts = async function () {
+  const MAX_ATTEMPTS = 5;
+  const LOCK_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
-const PORT = 5050;
-app.listen(PORT, () => console.log(`🚀 Fintrix Super Server running on port ${PORT}`));
+  this.loginAttempts += 1;
+
+  if (this.loginAttempts >= MAX_ATTEMPTS) {
+    this.lockUntil = new Date(Date.now() + LOCK_DURATION);
+  }
+
+  return this.save();
+};
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;

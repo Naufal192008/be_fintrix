@@ -403,6 +403,33 @@
 }
 
 
+.form-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.form-success {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 0.87rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.form-success strong {
+  font-weight: 700;
+}
+
 @media (max-width: 992px) {
   .auth-wrapper {
     flex-direction: column;

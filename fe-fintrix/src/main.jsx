@@ -4,7 +4,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import App from "./App.jsx";
 import "./styles/main.css";
 import { BrowserRouter } from "react-router-dom";
-// PENTING: Pastikan path import ini sesuai dengan letak folder kamu
 import { AuthProvider } from "./context/AuthContext.jsx";
 
 createRoot(document.getElementById("root")).render(

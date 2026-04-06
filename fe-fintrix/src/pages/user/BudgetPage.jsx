@@ -1,96 +1,314 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarComponent from "../../components/SidebarComponent";
 import TopNavbarComponent from "../../components/TopNavbarComponent";
-import { Container, Row, Col, Card, Form, Button, ProgressBar } from "react-bootstrap";
-import "../../styles/dashboard.css";
+import { Container, Row, Col, Card, Button, Modal, Form, Spinner, Alert } from "react-bootstrap";
+import { Plus, Utensils, Car, LayoutList, Package, AlertTriangle, MoreVertical } from "lucide-react";
+import { budgetAPI } from "../../services/api.js";
+import { BUDGET_CATEGORIES } from "../../constants/categories.js";
+import "../../styles/BudgetPage.css";
+import "../../styles/animations.css";
 
-const sampleBudgets = [
-  { id: 1, category: "Makan", target: 300, used: 180 },
-  { id: 2, category: "Transport", target: 150, used: 90 },
-  { id: 3, category: "Tagihan", target: 400, used: 260 },
-  { id: 4, category: "Hiburan", target: 200, used: 120 },
-  { id: 5, category: "Tabungan", target: 500, used: 340 },
+const ICON_MAP  = { "Food & Dining": Utensils, "Transportation": Car, "Healthcare": LayoutList };
+const COLOR_MAP = {
+  "Food & Dining":    { color: "#f5a623", bg: "#fff4e5" },
+  "Transportation":   { color: "#339af0", bg: "#e7f5ff" },
+  "Healthcare":       { color: "#339af0", bg: "#e7f5ff" },
+  "Entertainment":    { color: "#845ef7", bg: "#f3e8ff" },
+  "Shopping":         { color: "#339af0", bg: "#f0f4ff" },
+  "Bills & Utilities":{ color: "#f03e3e", bg: "#fff5f5" },
+};
+
+const budgetTemplates = [
+  { id: "diy-1", label: "Custom DIY Budget", desc: "Create a personalized budget from scratch tailored to your needs", icon: "✏️", iconBg: "#e6fcf5" },
+  { id: "diy-2", label: "Custom DIY Budget", desc: "Create a personalized budget from scratch tailored to your needs", icon: "📋", iconBg: "#e7f5ff" },
 ];
 
 function BudgetPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [budgets, setBudgets]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [showModal, setShowModal]     = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
+  const [menuOpen, setMenuOpen]       = useState(null);
+  const [form, setForm]               = useState({
+    name: BUDGET_CATEGORIES[0],
+    budget: "",
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+  });
+
+
+  // ── Fetch budgets dari API ──────────────────────────────────────────────────
+  const fetchBudgets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await budgetAPI.getAll();
+      // Backend sekarang sudah menghitung spent, remaining, dan percent dari transaksi riil
+      const mapped = (res.data?.data || []).map((b) => ({
+        id:         b._id,
+        name:       b.category,
+        budget:     b.limitAmount,
+        spent:      b.spent      ?? 0,         // ← dari transaksi riil
+        remaining:  b.remaining  ?? b.limitAmount,
+        percent:    b.percent    ?? 0,
+        icon:       ICON_MAP[b.category]  || Package,
+        iconColor:  COLOR_MAP[b.category]?.color || "#845ef7",
+        iconBg:     COLOR_MAP[b.category]?.bg    || "#f3e8ff",
+      }));
+      setBudgets(mapped);
+    } catch (err) {
+      setError("Gagal memuat budget. Pastikan kamu sudah login.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => { fetchBudgets(); }, []);
+
+  const remainingMonth = budgets.reduce((acc, b) => acc + (b.budget - b.spent), 0);
+  const alerts = budgets
+    .map((b) => ({ ...b, pct: Math.round((b.spent / b.budget) * 100) }))
+    .filter((b) => b.pct >= 80)
+    .sort((a, b) => b.pct - a.pct);
+
+  // ── Add budget ──────────────────────────────────────────────────────────────
+  const handleAdd = async () => {
+    if (!form.budget) return;
+    setSubmitting(true);
+    try {
+      await budgetAPI.save({
+        category: form.name,
+        limitAmount: Number(form.budget),
+        month: Number(form.month),
+        year: Number(form.year),
+      });
+      setShowModal(false);
+      setForm({ name: BUDGET_CATEGORIES[0], budget: "", month: new Date().getMonth() + 1, year: new Date().getFullYear() });
+      await fetchBudgets();
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal menyimpan budget.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleMenuDelete = async (id) => {
+    if (!window.confirm("Hapus budget ini?")) return;
+    try {
+      await budgetAPI.delete(id);
+      await fetchBudgets(); // refresh dari server
+    } catch (err) {
+      alert("Gagal menghapus budget.");
+    }
+    setMenuOpen(null);
+  };
+
+
   return (
-    <div className="d-flex">
+    <div className="d-flex budget-page">
       <SidebarComponent isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="dashboard-layout budget-layout flex-grow-1 d-flex flex-column">
+        <TopNavbarComponent onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
+        <main className="dashboard-main p-4 p-md-5">
+          <Container fluid className="px-0 px-md-3">
 
-      <div className="dashboard-layout flex-grow-1 d-flex flex-column">
-        <TopNavbarComponent onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
+            {/* Header */}
+            <div className="budget-header mb-4 anim-fade-up anim-d0">
+              <h2 className="fw-bold m-0">Budget</h2>
+              <p className="text-muted mb-0">Plan and manage your monthly spending limits</p>
+            </div>
 
-        <main className="dashboard-main p-4">
-          <Container fluid>
-            <Row className="g-4">
-              <Col lg={4}>
-                <Card className="shadow-sm border-0">
-                  <Card.Body>
-                    <h5 className="mb-3">Create budget</h5>
-                    <Form>
-                      <Form.Group className="mb-2">
-                        <Form.Label>Template</Form.Label>
-                        <Form.Select>
-                          <option>Custom</option>
-                          <option>50/30/20 Rule</option>
-                          <option>Basic Monthly</option>
-                        </Form.Select>
-                      </Form.Group>
-                      <Form.Group className="mb-2">
-                        <Form.Label>Category</Form.Label>
-                        <Form.Control placeholder="e.g. Makan" />
-                      </Form.Group>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Target amount</Form.Label>
-                        <Form.Control type="number" placeholder="0" />
-                      </Form.Group>
-                      <Button variant="success" className="w-100">
-                        Save budget
+            {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
+            {/* Top Row */}
+            <Row className="g-4 mb-4">
+              <Col xs={12} md={8}>
+                <Card className="shadow-sm budget-card h-100 card-hover anim-fade-up anim-d1">
+                  <Card.Body className="p-4">
+                    <div className="d-flex budget-create-header justify-content-between align-items-start mb-1">
+                      <div>
+                        <h5 className="fw-bold text-dark mb-1">Create New Budget</h5>
+                        <p className="text-muted small mb-0">Set up a custom budget or use a template</p>
+                      </div>
+                      <Button className="budget-btn-create d-flex align-items-center px-4 py-2" onClick={() => setShowModal(true)}>
+                        <Plus size={17} className="me-1" /> Create Budget
                       </Button>
-                    </Form>
+                    </div>
+                    <Row className="g-3 mt-2">
+                      {budgetTemplates.map((t) => (
+                        <Col xs={12} sm={6} key={t.id}>
+                          <div className="p-3 border budget-template-card" onClick={() => setShowModal(true)}>
+                            <div className="budget-template-icon" style={{ backgroundColor: t.iconBg }}>{t.icon}</div>
+                            <div className="fw-bold text-dark small mb-1">{t.label}</div>
+                            <div className="text-muted" style={{ fontSize: 12 }}>{t.desc}</div>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
                   </Card.Body>
                 </Card>
               </Col>
 
-              <Col lg={8}>
-                <Card className="shadow-sm border-0">
-                  <Card.Body>
-                    <h5 className="mb-3">Budget overview</h5>
-                    {sampleBudgets.map((b) => {
-                      const percent = Math.round((b.used / b.target) * 100);
-                      const variant =
-                        percent >= 90 ? "danger" : percent >= 70 ? "warning" : "success";
-                      return (
-                        <div key={b.id} className="mb-3">
-                          <div className="d-flex justify-content-between mb-1">
-                            <span>{b.category}</span>
-                            <span className="small text-muted">
-                              Rp{b.used.toLocaleString()} / Rp{b.target.toLocaleString()}
-                            </span>
+              <Col xs={12} md={4}>
+                <Card className="shadow-sm budget-card h-100 card-hover anim-fade-right anim-d2">
+                  <Card.Body className="p-4">
+                    <h5 className="fw-bold text-dark mb-1">Budget Alerts</h5>
+                    <p className="text-muted small mb-3">Categories approaching limit</p>
+                    <div className="d-flex flex-column gap-2 mb-4">
+                      {alerts.length === 0 && <div className="text-muted small">All budgets are on track 🎉</div>}
+                      {alerts.map((a, i) => (
+                        <div key={i} className="p-3 budget-alert-item d-flex align-items-start gap-2">
+                          <AlertTriangle size={18} className="mt-1 flex-shrink-0" style={{ color: "#f5a623" }} />
+                          <div>
+                            <div className="fw-bold small budget-alert-title">{a.pct}% Used</div>
+                            <div className="text-muted" style={{ fontSize: 12 }}>You have used {a.pct}% of your {a.name} budget</div>
                           </div>
-                          <ProgressBar
-                            now={percent}
-                            variant={variant}
-                            label={`${percent}%`}
-                            className="small"
-                          />
                         </div>
-                      );
-                    })}
-                    <p className="mt-3 small text-muted mb-0">
-                      Fintrix akan memberi notifikasi otomatis ketika budget hampir habis.
-                    </p>
+                      ))}
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="small text-muted">Total Budget Set</span>
+                      <span className="fw-bold budget-remaining-value">${budgets.reduce((s, b) => s + b.budget, 0).toLocaleString()}</span>
+                    </div>
+                    <div className="budget-remaining-bar-track">
+                      <div className="budget-remaining-bar-fill" />
+                    </div>
                   </Card.Body>
                 </Card>
               </Col>
             </Row>
+
+            {/* Budget Cards Grid */}
+            <Card className="shadow-sm budget-card card-hover anim-fade-up anim-d3">
+              <Card.Body className="p-4">
+                <h5 className="fw-bold text-dark mb-1">Your Budgets</h5>
+                <p className="text-muted small mb-4">Track your spending across different categories</p>
+
+                {loading ? (
+                  <div className="text-center py-4">
+                    <Spinner animation="border" variant="success" />
+                    <p className="mt-3 text-muted small">Loading budgets...</p>
+                  </div>
+                ) : budgets.length === 0 ? (
+                  <div className="text-center py-4 text-muted">
+                    <p>No budgets yet. Create your first budget!</p>
+                  </div>
+                ) : (
+                  <Row className="g-3">
+                    {budgets.map((b) => {
+                    const pct       = b.percent;
+                    const remaining = b.remaining ?? (b.budget - b.spent);
+                    const barColor  = pct >= 90 ? "#ff6b6b" : pct >= 70 ? "#f5a623" : "#20c997";
+                    const cardClass = pct >= 80 ? "budget-item-card--warning" : "budget-item-card--normal";
+
+                      return (
+                        <Col key={b.id} xs={12} md={6}>
+                          <div className={`p-4 border budget-item-card ${cardClass}`}>
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                              <div className="d-flex align-items-center gap-3">
+                                <div className="budget-item-icon" style={{ backgroundColor: b.iconBg, color: b.iconColor }}>
+                                  <b.icon size={20} />
+                                </div>
+                                <div>
+                                  <div className="fw-bold text-dark">{b.name}</div>
+                                  <div className="text-muted small">Budget: ${b.budget.toLocaleString()}</div>
+                                </div>
+                              </div>
+                              <div className="position-relative">
+                                <button className="btn btn-sm btn-light p-1" onClick={() => setMenuOpen(menuOpen === b.id ? null : b.id)}>
+                                  <MoreVertical size={16} />
+                                </button>
+                                {menuOpen === b.id && (
+                                  <div className="position-absolute end-0 bg-white shadow budget-context-menu py-1">
+                                    <button className="btn btn-sm w-100 text-start text-danger px-3" onClick={() => handleMenuDelete(b.id)}>Delete</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="budget-item-stats">
+                              <div className="d-flex justify-content-between mb-1">
+                                <span className="text-muted small">Spent</span>
+                                <span className="fw-bold text-dark">${b.spent.toLocaleString()}</span>
+                              </div>
+                              <div className="d-flex justify-content-between mb-1">
+                                <span className="text-muted small">Remaining</span>
+                                <span className="fw-bold budget-item-remaining">${remaining.toLocaleString()}</span>
+                              </div>
+                              <div className="d-flex justify-content-between mb-2">
+                                <span className="text-muted small">Progress</span>
+                                <span className="fw-bold small" style={{ color: barColor }}>{pct}%</span>
+                              </div>
+                            </div>
+                            <div className="budget-progress-track">
+                              <div className="budget-progress-fill" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                            </div>
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                )}
+              </Card.Body>
+            </Card>
+
           </Container>
         </main>
       </div>
+
+      {/* Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">Create New Budget</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="px-4 pb-4">
+
+          {/* Info banner */}
+          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px", marginBottom: 20 }}>
+            <div className="d-flex align-items-start gap-2">
+              <span style={{ fontSize: 18 }}>💡</span>
+              <div style={{ fontSize: "0.82rem", color: "#166534", lineHeight: 1.6 }}>
+                <strong>Bagaimana Spent dihitung?</strong><br />
+                Nilai <strong>Spent</strong> diambil <em>otomatis</em> dari transaksi expense yang kamu catat
+                di halaman <strong>Transactions</strong>.<br />
+                Pastikan kategori dan bulan transaksi sama dengan budget ini.
+              </div>
+            </div>
+          </div>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="small fw-bold">Category</Form.Label>
+            <Form.Select className="budget-modal-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}>
+              {BUDGET_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            </Form.Select>
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label className="small fw-bold">Budget Limit ($)</Form.Label>
+            <Form.Control type="number" placeholder="e.g. 500" className="budget-modal-input" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+          </Form.Group>
+          <Row className="g-3 mb-4">
+            <Col xs={6}>
+              <Form.Label className="small fw-bold">Month</Form.Label>
+              <Form.Select className="budget-modal-input" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })}>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col xs={6}>
+              <Form.Label className="small fw-bold">Year</Form.Label>
+              <Form.Control type="number" className="budget-modal-input" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
+            </Col>
+          </Row>
+          <Button className="budget-modal-btn w-100 fw-bold py-2" onClick={handleAdd} disabled={submitting}>
+            {submitting ? <><Spinner size="sm" className="me-2" />Saving...</> : "Save Budget"}
+          </Button>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
 
 export default BudgetPage;
-

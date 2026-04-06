@@ -21,7 +21,11 @@ const budgetSchema = new mongoose.Schema({
   year: {
     type: Number, // Contoh: 2026
     required: true
+  },
+  spentOverride: {
+    type: Number,
+    default: null   // null = otomatis dari transaksi, angka = manual override
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Budget', budgetSchema);
+module.exports = mongoose.model('Budget', budgetSchema);

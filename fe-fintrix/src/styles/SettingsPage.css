@@ -1,0 +1,237 @@
+/* =============================================
+   SettingsPage.css – styles for the Settings page
+   ============================================= */
+
+/* ── Page Wrapper ──────────────────────────── */
+.settings-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.settings-layout {
+  overflow-x: hidden;
+}
+
+/* ── Page Header ───────────────────────────── */
+.settings-header h2 {
+  color: #1a1f36;
+  font-size: 1.75rem;
+}
+
+/* ── Cards (shared) ────────────────────────── */
+.settings-card {
+  border-radius: 16px !important;
+  border: none !important;
+}
+
+/* ── Profile Card ──────────────────────────── */
+.settings-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.settings-avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  background-color: #20c997;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.settings-avatar-edit-btn {
+  width: 26px;
+  height: 26px;
+  bottom: -6px;
+  right: -6px;
+  cursor: pointer;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background-color: #20c997;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-btn-edit-profile {
+  background-color: #e6fcf5 !important;
+  color: #20c997 !important;
+  border-radius: 20px !important;
+  border: none !important;
+  font-weight: 700;
+}
+
+/* ── Quick Action Buttons ──────────────────── */
+.settings-btn-logout {
+  background-color: #f1f3f5 !important;
+  color: #495057 !important;
+  border-radius: 10px !important;
+  border: none !important;
+  font-weight: 700;
+}
+
+.settings-btn-logout:hover {
+  background-color: #e9ecef !important;
+}
+
+.settings-btn-delete {
+  background-color: #fff5f5 !important;
+  color: #e03131 !important;
+  border-radius: 10px !important;
+  border: none !important;
+  font-weight: 700;
+}
+
+.settings-btn-delete:hover {
+  background-color: #ffe8e6 !important;
+}
+
+/* ── Data Secure Banner ────────────────────── */
+.settings-secure-banner {
+  background-color: #f0f4ff !important;
+  border-radius: 16px !important;
+  border: none !important;
+}
+
+.settings-secure-icon { color: #3366ff; }
+
+/* ── Account Settings Form ─────────────────── */
+.settings-input-group {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.settings-input-group .input-group-text {
+  background-color: #fff;
+  border: none;
+  color: #868e96;
+}
+
+.settings-form-control {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: #fff !important;
+  color: #1a1f36;
+  font-weight: 500;
+}
+
+.settings-form-control:focus {
+  box-shadow: none !important;
+}
+
+.settings-pw-toggle {
+  cursor: pointer;
+  background-color: #fff;
+  border: none;
+  color: #868e96;
+}
+
+.settings-btn-change-pw {
+  background-color: #f1f3f5 !important;
+  color: #495057 !important;
+  border: 1px solid #f1f3f5 !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.settings-btn-save {
+  background-color: #20c997 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.settings-btn-save:hover {
+  background-color: #17a580 !important;
+}
+
+/* ── Select Fields ─────────────────────────── */
+.settings-select {
+  background-color: #f8f9fa !important;
+  border: 1px solid #f1f3f5 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  font-weight: 500;
+  color: #1a1f36;
+}
+
+.settings-select-icon {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  margin-left: 0.75rem;
+  color: #868e96;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── Theme Switcher ────────────────────────── */
+.settings-theme-switcher {
+  background-color: #f1f3f5;
+  border-radius: 50px;
+  padding: 4px;
+  display: flex;
+}
+
+.settings-theme-btn {
+  flex: 1;
+  border: none !important;
+  border-radius: 50px !important;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 0;
+  transition: background-color 0.2s, color 0.2s;
+  text-decoration: none !important;
+}
+
+.settings-theme-btn--active {
+  background-color: #20c997 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(32, 201, 151, 0.3);
+}
+
+.settings-theme-btn--inactive {
+  background-color: transparent !important;
+  color: #868e96 !important;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 767.98px) {
+  .settings-header h2 { font-size: 1.4rem; }
+
+  .settings-pw-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .settings-btn-change-pw {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .settings-avatar,
+  .settings-avatar-placeholder {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+  }
+
+  .settings-form-control {
+    font-size: 14px;
+  }
+}

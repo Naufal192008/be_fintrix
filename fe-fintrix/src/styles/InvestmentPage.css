@@ -1,0 +1,203 @@
+/* =============================================
+   InvestmentPage.css – styles for the Investment page
+   ============================================= */
+
+/* ── Page Wrapper ──────────────────────────── */
+.investment-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.investment-layout {
+  overflow-x: hidden;
+}
+
+/* ── Page Header ───────────────────────────── */
+.investment-header h2 {
+  color: #1a1f36;
+  font-size: 1.75rem;
+}
+
+.investment-btn-add {
+  background-color: #20c997 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 700;
+  padding: 10px 22px;
+}
+
+.investment-btn-add:hover {
+  background-color: #17a580 !important;
+}
+
+/* ── Cards (shared) ────────────────────────── */
+.investment-card {
+  border-radius: 14px !important;
+  border: none !important;
+}
+
+/* ── Metric Cards ──────────────────────────── */
+.investment-metric-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.investment-metric-icon--green  { background-color: #e6fcf5; color: #20c997; }
+.investment-metric-icon--purple { background-color: #eef2ff; color: #748ffc; }
+.investment-metric-icon--violet { background-color: #f3e8ff; color: #845ef7; }
+
+.investment-metric-change--up   { color: #20c997 !important; }
+.investment-metric-change--down { color: #ff6b6b !important; }
+
+.investment-metric-value--profit { color: #20c997 !important; }
+.investment-metric-value--dark   { color: #1a1f36 !important; }
+
+/* ── Allocation Legend ─────────────────────── */
+.investment-alloc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Best / Worst Cards ────────────────────── */
+.investment-best-card {
+  background-color: #f0fdf8 !important;
+  border-radius: 14px !important;
+}
+
+.investment-worst-card {
+  background-color: #fff5f5 !important;
+  border-radius: 14px !important;
+}
+
+.investment-performer-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.investment-performer-icon--best  { background-color: #20c997; color: #fff; }
+.investment-performer-icon--worst { background-color: #ff6b6b; color: #fff; }
+
+.investment-best-value  { color: #20c997 !important; }
+.investment-worst-value { color: #ff6b6b !important; }
+
+/* ── Portfolio Table ───────────────────────── */
+.investment-list-card {
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+
+.investment-table thead tr {
+  border-bottom: 2px solid #f1f3f5 !important;
+}
+
+.investment-table th {
+  letter-spacing: 0.5px;
+  font-size: 0.72rem;
+}
+
+.investment-asset-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.investment-profit-positive { color: #20c997 !important; }
+.investment-profit-negative { color: #ff6b6b !important; }
+
+.investment-expand-row {
+  background-color: #f8f9fa;
+}
+
+/* ── Modal ─────────────────────────────────── */
+.investment-modal-input {
+  border-radius: 8px !important;
+}
+
+.investment-modal-btn {
+  background-color: #20c997 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+}
+
+.investment-modal-btn:hover {
+  background-color: #17a580 !important;
+}
+
+/* ── Recharts Chart Area ───────────────────── */
+.investment-chart-wrap {
+  width: 100%;
+  height: 220px;
+}
+
+/* Recharts tooltip: override default style */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+/* Animate the Recharts area path drawing */
+.recharts-area-area {
+  transition: opacity 0.4s ease;
+}
+
+/* Smooth dot hover */
+.recharts-dot {
+  transition: r 0.2s ease;
+}
+
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 767.98px) {
+  .investment-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .investment-btn-add {
+    width: 100%;
+    justify-content: center !important;
+  }
+
+  .investment-header h2 { font-size: 1.4rem; }
+
+  .investment-best-card .card-body,
+  .investment-worst-card .card-body {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .investment-performer-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .investment-metric-icon { width: 32px; height: 32px; }
+
+  .investment-table th,
+  .investment-table td {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.35rem;
+  }
+}

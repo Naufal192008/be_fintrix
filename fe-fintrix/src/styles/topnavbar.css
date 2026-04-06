@@ -45,21 +45,35 @@
   color: #0f172a;
 }
 
-/* Container ikon (Lonceng & Pesan) */
 .icon-wrapper {
   width: 40px !important;
   height: 40px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
   border-radius: 12px !important;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-.icon-wrapper:hover {
-  background-color: #e2e8f0;
+.icon-wrapper.icon-success {
+  background-color: #dcfce7 !important; /* Hijau muda */
+}
+
+.icon-wrapper.icon-success:hover {
+  background-color: #bbf7d0 !important;
+}
+
+.icon-wrapper.icon-muted {
+  background-color: #f1f5f9 !important; /* Abu-abu muda */
+}
+
+.icon-wrapper.icon-muted:hover {
+  background-color: #e2e8f0 !important;
+  transform: scale(1.05);
+}
+
+.icon-wrapper.icon-success:hover {
   transform: scale(1.05);
 }
 

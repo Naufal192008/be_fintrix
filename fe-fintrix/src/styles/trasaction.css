@@ -377,8 +377,75 @@
   background: #16a34a !important;
 }
 
-/* responsive */
-@media (max-width: 768px) {
+/* =============================================
+   RESPONSIVE: Tablet (<992px)
+   ============================================= */
+@media (max-width: 991.98px) {
+  .tp-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* =============================================
+   RESPONSIVE: Mobile (<768px)
+   ============================================= */
+@media (max-width: 767.98px) {
+  /* Header: stack vertically */
+  .tp-page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .tp-btn-add {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Summary metric cards: 2 per row */
+  .tp-metric-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  /* Filter bar */
+  .tp-filter-input-group,
+  .tp-filter-select {
+    font-size: 0.85rem;
+  }
+
+  .tp-btn-filter {
+    padding: 0.6rem 1rem;
+    width: 100%;
+  }
+
+  /* Table: make it scroll horizontally */
+  .tp-table {
+    min-width: 700px;
+  }
+
+  /* Table font size reduction */
+  .tp-table-th {
+    font-size: 0.68rem;
+  }
+
+  .tp-table-td-date,
+  .tp-table-td-budget,
+  .tp-table-td-note,
+  .tp-table-td-category,
+  .tp-table-td-amount-income,
+  .tp-table-td-amount-expense {
+    font-size: 0.82rem;
+  }
+
+  /* Card body padding */
+  .tp-card-value-dark,
+  .tp-card-value-green,
+  .tp-card-value-red {
+    font-size: 1.1rem;
+  }
+
+  /* Modal */
   .tp-transaction-modal .modal-dialog {
     max-width: calc(100% - 24px);
     margin: 12px auto;
@@ -403,7 +470,7 @@
   }
 
   .tp-modal-title {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
   }
 
   .tp-type-switcher {
@@ -411,7 +478,42 @@
   }
 
   .tp-type-option {
-    height: 54px;
-    font-size: 1rem;
+    height: 52px;
+    font-size: 0.95rem;
+  }
+
+  .tp-input {
+    height: 50px;
+    font-size: 0.92rem !important;
   }
 }
+
+/* =============================================
+   RESPONSIVE: Small phones (<480px)
+   ============================================= */
+@media (max-width: 479.98px) {
+  .tp-title {
+    font-size: 1.3rem;
+  }
+
+  /* Full-width metric cards on very small screens */
+  .tp-metric-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .tp-card-value-dark,
+  .tp-card-value-green,
+  .tp-card-value-red {
+    font-size: 1rem;
+  }
+
+  .tp-card-label {
+    font-size: 0.8rem;
+  }
+
+  .tp-table {
+    min-width: 600px;
+  }
+}
+
