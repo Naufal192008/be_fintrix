@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { addGoal, getGoals, updateGoalProgress } = require('../controllers/goalController');
+const { getGoals, addProgress } = require('../controllers/goalController');
+const { isLoggedIn } = require('../middleware/authMiddleware');
 
-router.post('/', addGoal);
-router.get('/', getGoals);
-router.put('/:id', updateGoalProgress);
+router.get('/', isLoggedIn, getGoals);
+router.put('/:id/add', isLoggedIn, addProgress);
 
 module.exports = router;

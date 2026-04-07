@@ -17,7 +17,8 @@ def generate_financial_advice(data):
         expense_ratio = (expenses / income) * 100 if income > 0 else 0
         
         # LOGIKA PINTAR 2: Prediksi Kebangkrutan (Real-live Alert)
-        daily_avg = expenses / datetime.now().day
+        current_day = datetime.now().day
+        daily_avg = expenses / current_day if current_day > 0 else expenses
         projected_expense = daily_avg * 30
         
         advice = []
@@ -38,9 +39,11 @@ def generate_financial_advice(data):
                 advice.append(f"🎯 Target '{goal['title']}' masih rendah. Coba alokasikan 5% uangmu ke sini hari ini.")
 
         # LIVE DATA MOCK (Bisa dikembangkan pakai API Berita/Emas asli)
-        market_trends = ["Harga Emas sedang turun 1.2%, waktu yang baik untuk beli!", 
-                         "Suku bunga bank naik, mending simpan di deposito.",
-                         "Inflasi global naik, hati-hati dengan pengeluaran tersier."]
+        market_trends = [
+            "Harga Emas sedang turun 1.2%, waktu yang baik untuk beli!", 
+            "Suku bunga bank naik, mending simpan di deposito.",
+            "Inflasi global naik, hati-hati dengan pengeluaran tersier."
+        ]
         
         final_response = {
             "status": "Smart",

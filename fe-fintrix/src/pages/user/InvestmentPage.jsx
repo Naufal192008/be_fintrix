@@ -207,8 +207,13 @@ function InvestmentPage() {
                             </defs>
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} dy={8} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={42} />
-                            <Tooltip content={<GrowthTooltip />} />
+<YAxis 
+  axisLine={false} 
+  tickLine={false} 
+  tick={{ fontSize: 11, fill: "#94a3b8" }} 
+  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} 
+  width={42} 
+/>                            <Tooltip content={<GrowthTooltip />} />
                             <Area type="monotone" dataKey="val" stroke="#20c997" strokeWidth={2.5} fill="url(#investGrad)"
                               dot={{ r: 4, fill: "#20c997", stroke: "#fff", strokeWidth: 2 }}
                               activeDot={{ r: 6, fill: "#20c997", stroke: "#fff", strokeWidth: 2 }}

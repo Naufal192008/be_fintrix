@@ -6,6 +6,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const session = require("express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const { spawn } = require('child_process');
 
 // Import Utils & Routes
 const { generateToken, generateRefreshToken } = require('./src/utils/generateToken');
@@ -15,8 +16,8 @@ const transactionRoutes = require('./src/routes/transactionRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const budgetRoutes = require('./src/routes/budgetRoutes');
 const investmentRoutes = require('./src/routes/investmentRoutes');
-const aiRoutes = require('./src/routes/aiRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+// Catatan: aiRoutes sengaja tidak di-import di sini karena logikanya langsung ditaruh di bawah agar tidak bentrok.
 
 const app = express();
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -28,11 +29,10 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Fintrix DB Connected"))
   .catch(err => console.log("❌ DB Error:", err));
 
-// LAZY LOAD User model (setelah mongoose connect)
+// LAZY LOAD User model
 let User;
 const getUser = () => {
   if (!User) {
-    // Build inline User schema (minimal, cukup untuk Google auth)
     const userSchema = new mongoose.Schema({
       googleId: { type: String },
       name: { type: String, required: true },
@@ -47,7 +47,6 @@ const getUser = () => {
       lockUntil: { type: Date },
     }, { timestamps: true });
 
-    // Gunakan model yang sudah ada jika ada, atau buat baru
     try {
       User = mongoose.model('User');
     } catch {
@@ -73,7 +72,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: false, // Set true jika nanti portofoliomu online pakai HTTPS
     httpOnly: true,
     sameSite: "lax",
     maxAge: 24 * 60 * 60 * 1000
@@ -98,16 +97,13 @@ passport.use(new GoogleStrategy(
       let user = await UserModel.findOne({ googleId: profile.id });
 
       if (!user) {
-        // Cek apakah email sudah ada (akun manual yang sama)
         user = await UserModel.findOne({ email: profile.emails[0].value });
         if (user) {
-          // Gabungkan akun Google dengan akun yang sudah ada
           user.googleId = profile.id;
           user.avatar = user.avatar || profile.photos[0].value;
           user.isVerified = true;
           await user.save();
         } else {
-          // Buat user baru
           user = await UserModel.create({
             googleId: profile.id,
             name: profile.displayName,
@@ -119,10 +115,8 @@ passport.use(new GoogleStrategy(
         }
       }
 
-      // Update last login
       user.lastLogin = new Date();
       await user.save();
-
       return done(null, user);
     } catch (err) {
       return done(err, null);
@@ -142,10 +136,56 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // ─────────────────────────────────────────
+// AI INSIGHT ROUTE (PINTU MASUK PYTHON)
+// ─────────────────────────────────────────
+app.get("/api/ai/insight", async (req, res) => {
+  // Cek apakah user sudah login
+  if (!req.user) return res.status(401).json({ message: "Unauthorized: Silahkan login dulu" });
+
+  try {
+    // 1. SIAPKAN DATA UNTUK PYTHON
+    // Idealnya data ini ditarik dari MongoDB (Transaction & Goal model).
+    // Sementara aku format statis agar sesuai EXACTLY dengan apa yang diminta financial_brain.py kamu.
+    // Nanti kalau fitur transaksimu sudah jalan, tinggal ganti angka ini dengan hasil query DB.
+    const userFinancialData = {
+      balance: 15000000,  // Contoh Saldo
+      expenses: 4500000,  // Contoh Pengeluaran bulan ini
+      income: 8000000,    // Contoh Pemasukan bulan ini
+      goals: [
+        { title: "Beli Laptop Koding", target: 15000000, current: 2000000 },
+        { title: "Dana Darurat", target: 10000000, current: 8000000 }
+      ]
+    };
+
+    // 2. JALANKAN PYTHON
+    const python = spawn('python', ['./financial_brain.py', JSON.stringify(userFinancialData)]);
+
+    let result = "";
+    python.stdout.on('data', (data) => { result += data.toString(); });
+    
+    python.stderr.on('data', (data) => {
+      console.error(`Python Error: ${data}`);
+    });
+
+    python.on('close', (code) => {
+      try { 
+        res.json(JSON.parse(result)); 
+      } catch (e) { 
+        console.error("Gagal parse JSON dari Python:", result);
+        res.status(500).json({ 
+          error: "Terjadi kesalahan saat AI menganalisa data.", 
+          raw: result 
+        }); 
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─────────────────────────────────────────
 // AUTH ROUTES
 // ─────────────────────────────────────────
-
-// Trigger Google Login
 app.get("/api/auth/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
@@ -153,7 +193,6 @@ app.get("/api/auth/google",
   })
 );
 
-// Google OAuth Callback
 app.get("/api/auth/google/callback",
   passport.authenticate("google", {
     failureRedirect: `${CLIENT_URL}/login?error=google_failed`
@@ -161,33 +200,23 @@ app.get("/api/auth/google/callback",
   async (req, res) => {
     try {
       const user = req.user;
-
-      // ✅ Generate JWT token agar bisa akses REST API
       const token = generateToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
 
-      // Simpan refresh token di DB
       user.refreshToken = refreshToken;
       await user.save();
 
-      // Simpan session dulu, lalu redirect ke /auth/success dengan token di URL
       req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
-          return res.redirect(`${CLIENT_URL}/login?error=session_failed`);
-        }
-        // Redirect ke AuthSuccessPage dengan token
+        if (err) return res.redirect(`${CLIENT_URL}/login?error=session_failed`);
         const redirectUrl = `${CLIENT_URL}/auth/success?token=${token}&refreshToken=${refreshToken}`;
         res.redirect(redirectUrl);
       });
     } catch (error) {
-      console.error('Google callback error:', error);
       res.redirect(`${CLIENT_URL}/login?error=google_auth_failed`);
     }
   }
 );
 
-// Cek status login via session (opsional, untuk backward compat)
 app.get("/api/auth/login/success", (req, res) => {
   if (req.user) {
     res.status(200).json({ success: true, user: req.user });
@@ -196,7 +225,6 @@ app.get("/api/auth/login/success", (req, res) => {
   }
 });
 
-// Logout session
 app.get("/api/auth/logout", (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).json({ message: 'Logout gagal' });
@@ -206,7 +234,7 @@ app.get("/api/auth/logout", (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// REST API ROUTES (bisa juga di api-server.js)
+// REST API ROUTES
 // ─────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -214,10 +242,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/investments', investmentRoutes);
-app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', port: 5050 });
 });
@@ -229,5 +255,5 @@ const PORT = 5050;
 app.listen(PORT, () => {
   console.log(`🚀 Fintrix Server running on port ${PORT}`);
   console.log(`   Google OAuth: http://localhost:${PORT}/api/auth/google`);
-  console.log(`   REST API:     http://localhost:${PORT}/api/...`);
+  console.log(`   AI Engine:    http://localhost:${PORT}/api/ai/insight`);
 });
