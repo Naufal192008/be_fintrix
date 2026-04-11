@@ -24,6 +24,18 @@ exports.addInvestment = async (req, res) => {
       returnRate
     });
 
+    try {
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        user: req.user.id,
+        type: 'investment',
+        title: 'Investment portfolio updated',
+        message: `Your new investment ${assetName} was added with an initial amount of $${initialAmount}.`,
+        tag: 'Investment',
+        isRead: false
+      });
+    } catch (notifErr) { }
+
     res.status(201).json({ success: true, data: investment });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

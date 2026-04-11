@@ -17,6 +17,8 @@ const budgetRoutes = require('./src/routes/budgetRoutes');
 const investmentRoutes = require('./src/routes/investmentRoutes');
 const aiRoutes = require('./src/routes/aiRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const goalRoutes = require('./src/routes/goalRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
 
 const app = express();
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
@@ -214,8 +216,10 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api/goals', goalRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

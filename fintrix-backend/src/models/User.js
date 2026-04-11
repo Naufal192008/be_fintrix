@@ -82,7 +82,12 @@ const userSchema = new mongoose.Schema(
     },
     language: {
       type: String,
-      default: 'id',
+      default: 'en',
+    },
+    theme: {
+      type: String,
+      enum: ['light', 'dark', 'system'],
+      default: 'system',
     },
     notificationEmail: {
       type: Boolean,
