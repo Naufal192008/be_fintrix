@@ -223,6 +223,9 @@ app.use('/api/notifications', notificationRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', port: 5050 });
 });
+app.get('/', (req, res) => {
+    res.send('Server Backend Fintrix Berjalan Normal! 🚀');
+});
 
 // ─────────────────────────────────────────
 // START SERVER
@@ -233,3 +236,4 @@ app.listen(PORT, () => {
   console.log(`   Google OAuth: http://localhost:${PORT}/api/auth/google`);
   console.log(`   REST API:     http://localhost:${PORT}/api/...`);
 });
+module.exports = app;
