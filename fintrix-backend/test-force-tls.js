@@ -1,3 +1,4 @@
+
 const { MongoClient } = require('mongodb');
 
 // Nonaktifkan validasi sertifikat global (UNTUK TESTING)
