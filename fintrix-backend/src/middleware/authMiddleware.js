@@ -1,16 +1,16 @@
-const { verifyToken } = require('../utils/generateToken'); // Pastikan file utils ini ada
+const { verifyToken } = require('../utils/generateToken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
   let token;
 
-  // 1. Cek Auth via Session (Passport/Google Auth)
-  // Jika req.isAuthenticated() ada (dari passport), berarti dia user valid
+  // 1. Session authentication
+  // Bypasses JWT check if passport session exists
   if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
 
-  // 2. Cek Auth via Token (Header atau Cookies)
+  // 2. JWT authentication via headers or cookies
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   } else if (req.cookies && req.cookies.token) {
@@ -34,7 +34,7 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'User tidak ditemukan' });
     }
 
-    // Cek apakah akun dikunci (Dari logic Model User kamu)
+    // Check lock status to prevent brute force
     if (user.isLocked && user.isLocked()) {
       return res.status(423).json({ message: 'Akun terkunci. Silakan coba lagi nanti.' });
     }
@@ -47,9 +47,9 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Middleware Khusus Admin
+// RBAC: Admin authorization
 const admin = (req, res, next) => {
-  // Cek apakah user ada dan rolenya 'admin'
+  // Validate admin role
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
@@ -57,7 +57,7 @@ const admin = (req, res, next) => {
   }
 };
 
-// Middleware Opsional (Misal untuk halaman landing yang bisa lihat data publik)
+// Optional auth (populates user context if authenticated, but passes through if not)
 const optionalAuth = async (req, res, next) => {
   let token;
 
@@ -77,7 +77,7 @@ const optionalAuth = async (req, res, next) => {
         req.user = user;
       }
     } catch (error) {
-      // Abaikan error untuk optional
+      // Silently fail to allow public access
     }
   }
   

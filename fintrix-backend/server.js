@@ -16,7 +16,6 @@ const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const budgetRoutes = require('./src/routes/budgetRoutes');
 const investmentRoutes = require('./src/routes/investmentRoutes');
 const aiRoutes = require('./src/routes/aiRoutes');
-const adminRoutes = require('./src/routes/adminRoutes');
 const goalRoutes = require('./src/routes/goalRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 
@@ -30,11 +29,11 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Fintrix DB Connected"))
   .catch(err => console.log("❌ DB Error:", err));
 
-// LAZY LOAD User model (setelah mongoose connect)
+// Lazy load User model (after mongoose connects)
 let User;
 const getUser = () => {
   if (!User) {
-    // Build inline User schema (minimal, cukup untuk Google auth)
+    // Build inline User schema (minimal for Google auth flow)
     const userSchema = new mongoose.Schema({
       googleId: { type: String },
       name: { type: String, required: true },
@@ -49,7 +48,7 @@ const getUser = () => {
       lockUntil: { type: Date },
     }, { timestamps: true });
 
-    // Gunakan model yang sudah ada jika ada, atau buat baru
+    // Apply existing model if defined to prevent OverwriteModelError
     try {
       User = mongoose.model('User');
     } catch {
@@ -100,16 +99,16 @@ passport.use(new GoogleStrategy(
       let user = await UserModel.findOne({ googleId: profile.id });
 
       if (!user) {
-        // Cek apakah email sudah ada (akun manual yang sama)
+        // Check if an account already exists with this email
         user = await UserModel.findOne({ email: profile.emails[0].value });
         if (user) {
-          // Gabungkan akun Google dengan akun yang sudah ada
+          // Merge Google OAuth profile to existing account
           user.googleId = profile.id;
           user.avatar = user.avatar || profile.photos[0].value;
           user.isVerified = true;
           await user.save();
         } else {
-          // Buat user baru
+          // Register new user account
           user = await UserModel.create({
             googleId: profile.id,
             name: profile.displayName,
@@ -164,15 +163,15 @@ app.get("/api/auth/google/callback",
     try {
       const user = req.user;
 
-      // ✅ Generate JWT token agar bisa akses REST API
+      // Generate JWT and Refresh token for REST API access
       const token = generateToken(user._id);
       const refreshToken = generateRefreshToken(user._id);
 
-      // Simpan refresh token di DB
+      // Persist refresh token in DB
       user.refreshToken = refreshToken;
       await user.save();
 
-      // Simpan session dulu, lalu redirect ke /auth/success dengan token di URL
+      // Save session securely, then redirect to React frontend with tokens
       req.session.save((err) => {
         if (err) {
           console.error('Session save error:', err);
@@ -208,7 +207,7 @@ app.get("/api/auth/logout", (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// REST API ROUTES (bisa juga di api-server.js)
+// REST API ROUTES
 // ─────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -218,7 +217,6 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check
