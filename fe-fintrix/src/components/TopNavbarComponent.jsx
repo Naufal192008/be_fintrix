@@ -5,20 +5,17 @@ import { useAuth } from "../context/AuthContext.jsx";
 import "../styles/topnavbar.css";
 
 function TopNavbarComponent({ onToggleSidebar }) {
-  const { user, logout } = useAuth();
+  const { user, logout, t } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
 
-  // Cek alamat yang sedang aktif
   const isNotifications = currentPath === "/notifications";
   const isSettings = currentPath === "/settings";
 
-  // Ambil huruf pertama nama user buat avatar
   const initial = (user?.name || "G").charAt(0).toUpperCase();
   const photoUrl = user?.profilePicture || user?.avatar || user?.picture || user?.photo || user?.photoUrl || user?.image || user?.profileImageUrl;
 
-  // Fungsi logout: hapus sesi lalu redirect ke halaman login
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -42,7 +39,7 @@ function TopNavbarComponent({ onToggleSidebar }) {
               </InputGroup.Text>
               <Form.Control
                 type="search"
-                placeholder="transactions, accounts..."
+                placeholder={t("transactions, accounts...", "transaksi, akun...")}
                 className="bg-transparent border-0 shadow-none ps-2"
               />
             </InputGroup>
@@ -61,7 +58,7 @@ function TopNavbarComponent({ onToggleSidebar }) {
           <div 
             className={`icon-wrapper ${isNotifications ? 'icon-success' : 'icon-muted'} position-relative ms-2 ms-md-3`} 
             onClick={() => navigate("/notifications")}
-            title="Notifications"
+            title={t("Notifications", "Notifikasi")}
             style={{ cursor: 'pointer' }}
           >
             <Bell size={20} className={isNotifications ? "text-success" : "text-secondary"} />
@@ -72,7 +69,7 @@ function TopNavbarComponent({ onToggleSidebar }) {
           <div 
             className={`icon-wrapper ${isSettings ? 'icon-success' : 'icon-muted'} mx-2`} 
             onClick={() => navigate("/settings")}
-            title="Settings"
+            title={t("Settings", "Pengaturan")}
             style={{ cursor: 'pointer' }}
           >
             <Settings size={20} className={isSettings ? "text-success" : "text-secondary"} />
@@ -90,9 +87,9 @@ function TopNavbarComponent({ onToggleSidebar }) {
             </Dropdown.Toggle>
 
             <Dropdown.Menu className="shadow border-0 mt-3">
-              <Dropdown.Item onClick={() => navigate("/settings")}>My Profile</Dropdown.Item>
+              <Dropdown.Item onClick={() => navigate("/settings")}>{t("My Profile", "Profil Saya")}</Dropdown.Item>
               <Dropdown.Divider />
-              <Dropdown.Item className="text-danger" onClick={handleLogout}>Logout</Dropdown.Item>
+              <Dropdown.Item className="text-danger" onClick={handleLogout}>{t("Logout", "Keluar")}</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
 

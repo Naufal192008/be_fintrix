@@ -1,4 +1,7 @@
 import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 import NavBarComponent from "./components/NavBarComponent";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -9,8 +12,6 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import FooterComponent from "./components/FooterComponent";
 import DashboardPage from "./pages/user/DashboardPage.jsx";
 import PrivateRoute from "./components/PrivateRoute.jsx";
-import AdminRoute from "./components/AdminRoute.jsx";
-import DashboardAdmin from "./pages/admin/DashboardAdmin.jsx";
 import TransactionsPage from "./pages/user/TransactionsPage.jsx";
 import AnalyticsPage from "./pages/user/AnalyticsPage.jsx";
 import BudgetPage from "./pages/user/BudgetPage.jsx";
@@ -20,6 +21,14 @@ import NotificationsPage from "./pages/user/NotificationsPage.jsx";
 import SettingsPage from "./pages/user/SettingsPage.jsx";
 
 function App() {
+  useEffect(() => {
+    AOS.init({
+      duration: 1200,
+      once: false, 
+      mirror: true, 
+    });
+  }, []);
+
   return (
     <div className="App">
       <Routes>
@@ -90,14 +99,6 @@ function App() {
             <PrivateRoute>
               <SettingsPage />
             </PrivateRoute>
-          }
-        />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminRoute>
-              <DashboardAdmin />
-            </AdminRoute>
           }
         />
         <Route

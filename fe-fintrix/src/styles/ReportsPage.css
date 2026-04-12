@@ -1,8 +1,6 @@
-/* =============================================
-   ReportsPage.css – styles for the Reports page
-   ============================================= */
 
-/* ── Page Wrapper ──────────────────────────── */
+
+
 .reports-page {
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -12,19 +10,19 @@
   overflow-x: hidden;
 }
 
-/* ── Page Header ───────────────────────────── */
+
 .reports-header h2 {
   color: #1a1f36;
   font-size: 1.75rem;
 }
 
-/* ── Cards (shared) ────────────────────────── */
+
 .reports-card {
   border-radius: 16px !important;
   border: none !important;
 }
 
-/* ── Report Filters ────────────────────────── */
+
 .reports-filter-icon {
   color: #20c997;
 }
@@ -43,7 +41,7 @@
   box-shadow: none !important;
 }
 
-/* ── Metric Cards ──────────────────────────── */
+
 .reports-metric-icon {
   width: 40px;
   height: 40px;
@@ -63,7 +61,7 @@
 .reports-metric-value--expense { color: #ff6b6b !important; }
 .reports-metric-value--balance { color: #20c997 !important; }
 
-/* ── Category Report ───────────────────────── */
+
 .reports-category-scroll {
   overflow-x: auto;
   scrollbar-width: none;
@@ -106,7 +104,7 @@
   border-radius: 10px;
 }
 
-/* ── Monthly Report Table ──────────────────── */
+
 .reports-table-card {
   border-radius: 16px !important;
   overflow: hidden;
@@ -138,7 +136,7 @@
   border-bottom: none;
 }
 
-/* ── Export Section ────────────────────────── */
+
 .reports-btn-pdf {
   background-color: #ffffff !important;
   border: 1px solid #dee2e6 !important;
@@ -164,7 +162,7 @@
   background-color: #17a580 !important;
 }
 
-/* ── Responsive ────────────────────────────── */
+
 @media (max-width: 767.98px) {
   .reports-header h2    { font-size: 1.4rem; }
   .reports-metric-icon  { width: 36px; height: 36px; }

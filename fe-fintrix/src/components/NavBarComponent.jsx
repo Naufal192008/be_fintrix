@@ -3,6 +3,7 @@ import {NavLink} from 'react-router-dom'
 import {navLinks} from '../data/index'
 import {useNavigate} from 'react-router-dom'
 import {useState, useEffect} from 'react'
+import logoIcon from '../assets/Logo.png'
 
 
 
@@ -32,25 +33,43 @@ const NavBarComponent = () => {
     <div>
       <Navbar expand="lg" className={changeColor ? "color-active" : ""}>
         <Container>
-          <Navbar.Brand href="#home" className="fs-3 fw-bold text-white">Fintrix</Navbar.Brand>
+          <Navbar.Brand 
+            href="#home" 
+            className="d-flex align-items-center landing-logo"
+          >
+            <img 
+              src={logoIcon} 
+              alt="Fintrix Logo" 
+              style={{ width: '160px', height: 'auto', objectFit: 'contain' }} 
+            />
+          </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto text-center align-items-center">
-              {navLinks.map((link) => {
-                return (
-                  <div className="nav-link" key={link.id}>
-                    <NavLink
-                      to={link.path}
-                      className={({ isActive, isPending }) =>
-                        isPending ? "pending" : isActive ? "active" : ""
-                      }
-                      end
-                    >
-                      {link.title}
-                    </NavLink>
-                  </div>
-                );
-              })}
+                {navLinks.map((link) => {
+                  if (link.path.startsWith('#')) {
+                    return (
+                      <div className="nav-link" key={link.id}>
+                        <a href={link.path}>
+                          {link.title}
+                        </a>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="nav-link" key={link.id}>
+                      <NavLink
+                        to={link.path}
+                        className={({ isActive, isPending }) =>
+                          isPending ? "pending" : isActive ? "active" : ""
+                        }
+                        end
+                      >
+                        {link.title}
+                      </NavLink>
+                    </div>
+                  );
+                })}
                <div className='text-center' onClick={() => navigate("/login")}>
               <button className='btn-get-started ms-lg-3'>Get Started</button>
             </div>

@@ -4,10 +4,10 @@ import TopNavbarComponent from "../../components/TopNavbarComponent";
 import { Container, Row, Col, Card, Form, Button, Table, Spinner, Alert } from "react-bootstrap";
 import { Filter, FileText, TrendingUp, TrendingDown, Wallet, Utensils, Home, Car, ShoppingCart, Zap, Download, Package } from "lucide-react";
 import { analyticsAPI, transactionAPI } from "../../services/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import "../../styles/ReportsPage.css";
 import "../../styles/animations.css";
 
-// Icon mapping per kategori
 const CATEGORY_ICONS = {
   "Food & Dining":    { icon: Utensils,     color: "#20c997", bg: "#e6fcf5" },
   "Groceries":        { icon: ShoppingCart,  color: "#20c997", bg: "#e6fcf5" },
@@ -18,10 +18,12 @@ const CATEGORY_ICONS = {
   "Entertainment":    { icon: Package,       color: "#f03e3e", bg: "#fff5f5" },
 };
 
+// eslint-disable-next-line no-unused-vars
 const formatDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "";
-const formatMoney = (a) => "$" + Number(a).toLocaleString("en-US", { minimumFractionDigits: 2 });
 
 function ReportsPage() {
+  const { user, formatCurrency, t } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [summary, setSummary]         = useState(null);
   const [categories, setCategories]   = useState([]);
@@ -34,7 +36,6 @@ function ReportsPage() {
   const [dateTo, setDateTo]           = useState("");
   const [filterCategory, setFilterCategory] = useState("All Categories");
 
-  // ── Fetch semua data ────────────────────────────────────────────────────────
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -47,7 +48,7 @@ function ReportsPage() {
       setSummary(summaryRes.data?.data || null);
       setCategories(categoryRes.data?.data || []);
       setTransactions(txRes.data?.data || []);
-    } catch (err) {
+    } catch (err) { console.error(err);
       setError("Gagal memuat data laporan. Pastikan kamu sudah login.");
     } finally {
       setLoading(false);
@@ -56,7 +57,6 @@ function ReportsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // ── Filter transaksi berdasarkan pilihan ───────────────────────────────────
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
       const txDate = new Date(t.date);
@@ -67,7 +67,6 @@ function ReportsPage() {
     });
   }, [transactions, dateFrom, dateTo, filterCategory]);
 
-  // ── Summary dari filtered transactions ─────────────────────────────────────
   const filteredSummary = useMemo(() => {
     let income = 0, expense = 0;
     filteredTransactions.forEach((t) => {
@@ -77,7 +76,6 @@ function ReportsPage() {
     return { income, expense, balance: income - expense };
   }, [filteredTransactions]);
 
-  // ── Category breakdown (total semua — dari analytics API) ─────────────────
   const maxCatAmount = categories.length > 0 ? Math.max(...categories.map((c) => c.total)) : 1;
 
   const handleGenerate = async () => {
@@ -86,11 +84,10 @@ function ReportsPage() {
     setGenerating(false);
   };
 
-  // ── Export CSV ─────────────────────────────────────────────────────────────
   const handleExportCSV = () => {
-    const header = ["Date","Category","Type","Amount","Note"];
+    const header = [t("Date", "Tanggal"), t("Category", "Kategori"), t("Type", "Tipe"), t("Amount", "Jumlah"), t("Note", "Catatan")];
     const rows = filteredTransactions.map((t) => [
-      formatDate(t.date),
+      new Date(t.date).toLocaleDateString(user?.language === 'id' ? 'id-ID' : 'en-US', { month: "short", day: "2-digit", year: "numeric" }),
       t.category,
       t.type,
       t.amount,
@@ -100,14 +97,13 @@ function ReportsPage() {
     const blob = new Blob([csv], { type: "text/csv" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
-    a.href = url; a.download = "fintrix-report.csv"; a.click();
+    a.href = url; a.download = `fintrix-report-${new Date().getTime()}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
-  // ── Export PDF (browser print) ─────────────────────────────────────────────
   const handleExportPDF = () => window.print();
 
-  const uniqueCategories = ["All Categories", ...new Set(transactions.map((t) => t.category))];
+  const uniqueCategories = [t("All Categories", "Semua Kategori"), ...new Set(transactions.map((t) => t.category))];
 
   return (
     <div className="d-flex reports-page">
@@ -119,50 +115,50 @@ function ReportsPage() {
         <main className="dashboard-main p-4 p-md-5">
           <Container fluid className="px-0 px-md-3">
 
-            {/* Header */}
             <div className="reports-header mb-4 anim-fade-up anim-d0">
-              <h2 className="fw-bold m-0">Reports</h2>
-              <p className="text-muted">View and export your financial reports</p>
+              <h2 className="fw-bold m-0">{t("Reports", "Laporan")}</h2>
+              <p className="text-muted">{t("View and export your financial reports", "Lihat dan unduh laporan finansial Anda")}</p>
             </div>
 
             {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
-            {/* BLOCK 1: REPORT FILTERS */}
             <Card className="shadow-sm reports-card mb-4 card-hover anim-fade-up anim-d1">
               <Card.Body className="p-4">
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
                   <h5 className="fw-bold mb-0 d-flex align-items-center text-dark">
-                    <Filter size={20} className="reports-filter-icon me-2" /> Report Filters
+                    <Filter size={20} className="reports-filter-icon me-2" /> {t("Report Filters", "Filter Laporan")}
                   </h5>
                   <Button className="reports-btn-generate fw-bold px-4 py-2 d-flex align-items-center" onClick={handleGenerate} disabled={generating}>
                     {generating ? <Spinner size="sm" className="me-2" /> : <FileText size={18} className="me-2" />}
-                    Generate Report
+                    {t("Generate Report", "Buat Laporan")}
                   </Button>
                 </div>
                 <Row className="g-3">
                   <Col xs={12} sm={6} md={3}>
                     <Form.Group>
-                      <Form.Label className="small fw-bold text-dark mb-1">Report Type</Form.Label>
+                      <Form.Label className="small fw-bold text-dark mb-1">{t("Report Type", "Tipe Laporan")}</Form.Label>
                       <Form.Select className="reports-form-field py-2" value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                        <option>Monthly</option><option>Yearly</option><option>Weekly</option>
+                        <option value="Monthly">{t("Monthly", "Bulanan")}</option>
+                         <option value="Yearly">{t("Yearly", "Tahunan")}</option>
+                         <option value="Weekly">{t("Weekly", "Mingguan")}</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
                   <Col xs={12} sm={6} md={3}>
                     <Form.Group>
-                      <Form.Label className="small fw-bold text-dark mb-1">Date From</Form.Label>
+                      <Form.Label className="small fw-bold text-dark mb-1">{t("Date From", "Dari Tanggal")}</Form.Label>
                       <Form.Control type="date" className="reports-form-field py-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
                     </Form.Group>
                   </Col>
                   <Col xs={12} sm={6} md={3}>
                     <Form.Group>
-                      <Form.Label className="small fw-bold text-dark mb-1">Date To</Form.Label>
+                      <Form.Label className="small fw-bold text-dark mb-1">{t("Date To", "Sampai Tanggal")}</Form.Label>
                       <Form.Control type="date" className="reports-form-field py-2" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
                     </Form.Group>
                   </Col>
                   <Col xs={12} sm={6} md={3}>
                     <Form.Group>
-                      <Form.Label className="small fw-bold text-dark mb-1">Category Filter</Form.Label>
+                      <Form.Label className="small fw-bold text-dark mb-1">{t("Category Filter", "Filter Kategori")}</Form.Label>
                       <Form.Select className="reports-form-field py-2" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                         {uniqueCategories.map((c) => <option key={c}>{c}</option>)}
                       </Form.Select>
@@ -172,7 +168,6 @@ function ReportsPage() {
               </Card.Body>
             </Card>
 
-            {/* BLOCK 2: KEY METRICS */}
             {loading ? (
               <div className="text-center py-4 mb-4">
                 <Spinner animation="border" variant="success" />
@@ -185,9 +180,9 @@ function ReportsPage() {
                     <Card className="shadow-sm reports-card h-100 card-hover card-hover-green anim-fade-up anim-d2">
                       <Card.Body className="p-4">
                         <div className="reports-metric-icon reports-metric-icon--income mb-3"><TrendingUp size={20} /></div>
-                        <p className="small text-muted fw-semibold mb-1">Total Income</p>
+                        <p className="small text-muted fw-semibold mb-1">{t("Total Income", "Total Pemasukan")}</p>
                         <h3 className="fw-bold mb-0 reports-metric-value--income">
-                          {formatMoney(dateFrom || dateTo ? filteredSummary.income : summary?.totalIncome || 0)}
+                          {formatCurrency(dateFrom || dateTo ? filteredSummary.income : summary?.totalIncome || 0)}
                         </h3>
                       </Card.Body>
                     </Card>
@@ -196,9 +191,9 @@ function ReportsPage() {
                     <Card className="shadow-sm reports-card h-100 card-hover anim-fade-up anim-d3">
                       <Card.Body className="p-4">
                         <div className="reports-metric-icon reports-metric-icon--expense mb-3"><TrendingDown size={20} /></div>
-                        <p className="small text-muted fw-semibold mb-1">Total Expenses</p>
+                        <p className="small text-muted fw-semibold mb-1">{t("Total Expenses", "Total Pengeluaran")}</p>
                         <h3 className="fw-bold mb-0 reports-metric-value--expense">
-                          {formatMoney(dateFrom || dateTo ? filteredSummary.expense : summary?.totalExpense || 0)}
+                          {formatCurrency(dateFrom || dateTo ? filteredSummary.expense : summary?.totalExpense || 0)}
                         </h3>
                       </Card.Body>
                     </Card>
@@ -207,21 +202,20 @@ function ReportsPage() {
                     <Card className="shadow-sm reports-card h-100 card-hover card-hover-green anim-fade-up anim-d4">
                       <Card.Body className="p-4">
                         <div className="reports-metric-icon reports-metric-icon--balance mb-3"><Wallet size={20} /></div>
-                        <p className="small text-muted fw-semibold mb-1">Net Balance</p>
+                        <p className="small text-muted fw-semibold mb-1">{t("Net Balance", "Saldo Bersih")}</p>
                         <h3 className={`fw-bold mb-0 ${(dateFrom || dateTo ? filteredSummary.balance : summary?.balance || 0) >= 0 ? "reports-metric-value--balance" : "reports-metric-value--expense"}`}>
-                          {(dateFrom || dateTo ? filteredSummary.balance : summary?.balance || 0) >= 0 ? "+" : ""}
-                          {formatMoney(Math.abs(dateFrom || dateTo ? filteredSummary.balance : summary?.balance || 0))}
+                          {(dateFrom || dateTo ? filteredSummary.balance : summary?.balance || 0) >= 0 ? <span style={{ marginRight: '2px' }}>+</span> : ""}
+                          {formatCurrency(Math.abs(dateFrom || dateTo ? filteredSummary.balance : summary?.balance || 0))}
                         </h3>
                       </Card.Body>
                     </Card>
                   </Col>
                 </Row>
 
-                {/* BLOCK 3: CATEGORY REPORT */}
                 {categories.length > 0 && (
                   <Card className="shadow-sm reports-card mb-4 card-hover anim-fade-up anim-d3">
                     <Card.Body className="p-4">
-                      <h5 className="fw-bold text-dark mb-4">Category Report</h5>
+                      <h5 className="fw-bold text-dark mb-4">{t("Category Report", "Laporan Kategori")}</h5>
                       <div className="d-flex reports-category-scroll gap-3 pb-2">
                         {categories.map((cat, i) => {
                           const meta = CATEGORY_ICONS[cat.category] || { icon: Package, color: "#64748b", bg: "#f1f5f9" };
@@ -235,7 +229,7 @@ function ReportsPage() {
                                     <Icon size={22} />
                                   </div>
                                   <p className="small text-muted fw-bold mb-1">{cat.category}</p>
-                                  <h4 className="fw-bold text-dark mb-4">{formatMoney(cat.total)}</h4>
+                                  <h4 className="fw-bold text-dark mb-4">{formatCurrency(cat.total)}</h4>
                                   <div className="d-flex align-items-center">
                                     <div className="reports-progress-bar-track">
                                       <div className="reports-progress-bar-fill anim-progress-fill" style={{ width: `${pct}%`, backgroundColor: meta.color }} />
@@ -252,40 +246,39 @@ function ReportsPage() {
                   </Card>
                 )}
 
-                {/* BLOCK 4: TRANSACTION TABLE */}
                 <Card className="shadow-sm reports-table-card mb-4 card-hover anim-fade-up anim-d4">
                   <Card.Body className="p-4">
                     <h5 className="fw-bold text-dark mb-4">
-                      Transaction Report
-                      <span className="text-muted small fw-normal ms-2">({filteredTransactions.length} records)</span>
+                      {t("Transaction Report", "Laporan Transaksi")}
+                      <span className="text-muted small fw-normal ms-2">({filteredTransactions.length} {t("records", "transaksi")})</span>
                     </h5>
                     {filteredTransactions.length === 0 ? (
-                      <div className="text-center text-muted py-4">No transactions found for selected filters.</div>
+                      <div className="text-center text-muted py-4">{t("No transactions found for selected filters.", "Tidak ada transaksi ditemukan untuk filter yang dipilih.")}</div>
                     ) : (
                       <div className="table-responsive">
                         <Table hover borderless className="reports-table align-middle mb-0">
                           <thead>
                             <tr>
-                              <th className="text-secondary fw-bold py-3 text-uppercase">Date</th>
-                              <th className="text-secondary fw-bold py-3 text-uppercase">Category</th>
-                              <th className="text-secondary fw-bold py-3 text-uppercase text-center">Income</th>
-                              <th className="text-secondary fw-bold py-3 text-uppercase text-center">Expense</th>
-                              <th className="text-secondary fw-bold py-3 text-uppercase">Note</th>
+                              <th className="text-secondary fw-bold py-3 text-uppercase">{t("Date", "Tanggal")}</th>
+                              <th className="text-secondary fw-bold py-3 text-uppercase">{t("Category", "Kategori")}</th>
+                              <th className="text-secondary fw-bold py-3 text-uppercase text-center">{t("Income", "Pemasukan")}</th>
+                              <th className="text-secondary fw-bold py-3 text-uppercase text-center">{t("Expense", "Pengeluaran")}</th>
+                              <th className="text-secondary fw-bold py-3 text-uppercase">{t("Note", "Catatan")}</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredTransactions.map((t, i) => (
                               <tr key={t._id || i}>
-                                <td className="text-secondary fw-bold py-3">{formatDate(t.date)}</td>
+                                <td className="text-secondary fw-bold py-3">{new Date(t.date).toLocaleDateString(user?.language === 'id' ? 'id-ID' : 'en-US', { month: "short", day: "2-digit", year: "numeric" })}</td>
                                 <td className="text-dark fw-bold py-3">{t.category}</td>
                                 <td className="text-center fw-bold py-3">
                                   {t.type === "income"
-                                    ? <span className="income-positive">+{formatMoney(t.amount)}</span>
+                                    ? <span className="income-positive">+{formatCurrency(t.amount)}</span>
                                     : <span className="income-dash">—</span>}
                                 </td>
                                 <td className="text-center fw-bold py-3">
                                   {t.type === "expense"
-                                    ? <span className="expense-negative">-{formatMoney(t.amount)}</span>
+                                    ? <span className="expense-negative">-{formatCurrency(t.amount)}</span>
                                     : <span className="expense-dash">—</span>}
                                 </td>
                                 <td className="text-secondary py-3">{t.description || t.title || "—"}</td>
@@ -298,19 +291,18 @@ function ReportsPage() {
                   </Card.Body>
                 </Card>
 
-                {/* BLOCK 5: EXPORT */}
                 <Card className="shadow-sm reports-card card-hover anim-fade-up anim-d5">
                   <Card.Body className="p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center reports-export-row">
                     <div className="mb-3 mb-md-0">
-                      <h5 className="fw-bold text-dark mb-1">Export Report</h5>
-                      <p className="text-muted small mb-0">Download your financial report</p>
+                      <h5 className="fw-bold text-dark mb-1">{t("Export Report", "Unduh Laporan")}</h5>
+                      <p className="text-muted small mb-0">{t("Download your financial report", "Unduh laporan keuangan Anda")}</p>
                     </div>
                     <div className="d-flex flex-wrap gap-3 reports-export-btn-group">
                       <Button className="reports-btn-pdf fw-bold px-4 py-2 d-flex align-items-center" onClick={handleExportPDF}>
-                        <FileText size={18} className="me-2" /> Export as PDF
+                        <FileText size={18} className="me-2" /> {t("Export as PDF", "Unduh sebagai PDF")}
                       </Button>
                       <Button className="reports-btn-excel fw-bold px-4 py-2 d-flex align-items-center" onClick={handleExportCSV}>
-                        <Download size={18} className="me-2" /> Export as CSV
+                        <Download size={18} className="me-2" /> {t("Export as CSV", "Unduh sebagai CSV")}
                       </Button>
                     </div>
                   </Card.Body>

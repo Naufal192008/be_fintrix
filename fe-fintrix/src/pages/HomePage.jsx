@@ -2,6 +2,7 @@ import { Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { getStarted, lembarDua } from "../data/index";
 import FooterComponent from "../components/FooterComponent";
+import grafikkk from "../assets/grafikkk.jpg";
 
 const HomePage = () => {
   let navigate = useNavigate();
@@ -10,7 +11,7 @@ const HomePage = () => {
       <header className="w-100 min-vh-100 d-flex align-items-center pt-lg-5">
         <Container>
           <Row className="header-box d-flex align-items-center justify-content-center">
-            <Col lg={6} md={12} className="text-center text-lg-start">
+            <Col lg={6} md={12} className="text-center text-lg-start" data-aos="fade-up">
               <h1 className="fw-bold">
                 Control <br />
                 Your <span>Money</span> <br />
@@ -28,62 +29,19 @@ const HomePage = () => {
                 >
                   Get Started
                 </button>
-                <button className="btn-learn-more">Learn More</button>
+                <a href="#how-it-works" className="btn-learn-more text-decoration-none d-flex align-items-center justify-content-center">Learn More</a>
               </div>
             </Col>
 
-            <Col lg={6} md={10} sm={12} className="mt-5 mt-lg-0 d-flex justify-content-center">
-              <div className="home-card shadow-lg p-4 w-100">
-                <div className="d-flex justify-content-between align-items-center mb-4 text-start">
-                  <div>
-                    <p className="mb-1 text-label">Total Balance</p>
-                    <h2 className="fw-bold text-white">$24,580.00</h2>
-                  </div>
-                </div>
-
-                <hr className="border-secondary mb-4" />
-
-                <Row className="text-start">
-                  <Col xs={6}>
-                    <div className="stat-box p-3 rounded-4">
-                      <p className="mb-1 text-label">Income</p>
-                      <h4 className="fw-bold text-white">$8,240</h4>
-                      <span className="text-success small">+12.5%</span>
-                    </div>
-                  </Col>
-                  <Col xs={6}>
-                    <div className="stat-box p-3 rounded-4">
-                      <p className="mb-1 text-label">Expenses</p>
-                      <h4 className="fw-bold text-white">$3,680</h4>
-                      <span className="text-danger small">-8.2%</span>
-                    </div>
-                  </Col>
-                </Row>
-
-                <div className="savings-box mt-4 p-3 rounded-4 text-start">
-                  <div className="d-flex justify-content-between mb-2">
-                    <p className="mb-0 text-label">Savings Goal</p>
-                    <p className="small text-white mb-0">68%</p>
-                  </div>
-
-                  <div className="progress custom-progress-container">
-                    <div
-                      className="progress-bar custom-progress-bar"
-                      role="progressbar"
-                      aria-valuenow="68"
-                      aria-valuemin="0"
-                      aria-valuemax="100"
-                    ></div>
-                  </div>
-                </div>
-              </div>
+            <Col lg={6} md={12} className="mt-5 mt-lg-0 d-flex justify-content-center" data-aos="fade-left">
+              <img src={grafikkk} alt="Dashboard Overview" className="img-fluid rounded-4 shadow-lg" />
             </Col>
           </Row>
         </Container>
       </header>
 
       {/* Section Lembar Dua */}
-      <div className="lembar-dua w-100 min-vh-100">
+      <div className="lembar-dua w-100 min-vh-100" id="how-it-works">
         <Container>
           <Row>
             <Col>
@@ -97,9 +55,9 @@ const HomePage = () => {
             </Col>
           </Row>
           <Row className="justify-content-start g-4">
-            {lembarDua.map((hal2) => {
+            {lembarDua.map((hal2, index) => {
               return (
-                <Col key={hal2.id} lg="4" md="6" sm="12">
+                <Col key={hal2.id} lg="4" md="6" sm="12" data-aos="fade-up" data-aos-delay={index * 100}>
                   <div className="shadow-rounded">
                     <img src={hal2.image} alt={hal2.judul} className="mb-3" />
                     <div className="hal2">
@@ -115,7 +73,7 @@ const HomePage = () => {
       </div>
 
       {/* Section Lembar Cara */}
-      <div className="lembar-cara w-100">
+      <div className="lembar-cara w-100" id="getting-started">
         <Container>
           <Row className="mb-5">
             <Col>
@@ -125,9 +83,9 @@ const HomePage = () => {
             </Col>
           </Row>
           <Row>
-            {getStarted.map((start) => {
+            {getStarted.map((start, index) => {
               return (
-                <Col key={start.id} lg="4" md="6" sm="12" className="text-center">
+                <Col key={start.id} lg="4" md="6" sm="12" className="text-center" data-aos="zoom-in" data-aos-delay={index * 150}>
                   <img
                     src={start.image}
                     alt="number"

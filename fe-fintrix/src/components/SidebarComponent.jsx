@@ -10,41 +10,42 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import logoIcon from "../assets/Logo.png";
 import "../styles/sidebar.css";
 
-// Daftar menu navigasi sidebar
-// Tiap item punya: path (url tujuan), label (nama menu), icon (komponen lucide)
-const menuItems = [
-  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/transactions", label: "Transaction", icon: Receipt },
-  { path: "/analytics", label: "Analytics", icon: BarChart3 },
-  { path: "/budget", label: "Budget", icon: Wallet },
-  { path: "/investment", label: "Investment", icon: TrendingUp },
-  { path: "/reports", label: "Reports", icon: FileText },
-];
-
 function SidebarComponent({ isOpen, onClose }) {
-  // Ambil data user dari context (nama, email, inisial)
-  const { user } = useAuth();
+  const { user, t } = useAuth();
   const displayName = user?.name || "Guest";
   const displayEmail = user?.email || "guest@example.com";
   const initial = (displayName || "G").charAt(0).toUpperCase();
   const photoUrl = user?.profilePicture || user?.avatar || user?.picture || user?.photo || user?.photoUrl || user?.image || user?.profileImageUrl;
 
+  const menuItems = [
+    { path: "/dashboard", label: t("Dashboard", "Dasbor"), icon: LayoutDashboard },
+    { path: "/transactions", label: t("Transaction", "Transaksi"), icon: Receipt },
+    { path: "/analytics", label: t("Analytics", "Analitik"), icon: BarChart3 },
+    { path: "/budget", label: t("Budget", "Anggaran"), icon: Wallet },
+    { path: "/investment", label: t("Investment", "Investasi"), icon: TrendingUp },
+    { path: "/reports", label: t("Reports", "Laporan"), icon: FileText },
+  ];
+
   return (
     <>
-      {/* Overlay gelap di belakang sidebar (hanya muncul di mobile) */}
       {isOpen && (
         <div className="sidebar-overlay" onClick={onClose} />
       )}
 
-      {/* Sidebar utama */}
+      {/* Main Sidebar */}
       <div className={`sidebar-wrapper ${isOpen ? "open" : ""}`}>
-        {/* Header sidebar: logo + tombol close (mobile only) */}
+        {/* Sidebar Header */}
         <div className="sidebar-brand">
-          <div className="brand-header">
-            <h2 className="brand-text">FINTRIX</h2>
-            {/* Tombol X untuk tutup sidebar di mobile */}
+          <div className="brand-header py-4 d-flex justify-content-center">
+            <img 
+              src={logoIcon} 
+              alt="Logo" 
+              style={{ width: '140px', height: 'auto', objectFit: 'contain' }} 
+            />
+            {/* Close button for mobile views */}
             <button className="sidebar-close-btn" onClick={onClose}>
               <X size={22} />
             </button>
@@ -52,11 +53,10 @@ function SidebarComponent({ isOpen, onClose }) {
           <hr />
         </div>
 
-        {/* Daftar menu navigasi */}
+        {/* Navigation Items */}
         <div className="sidebar-nav">
           <Nav className="flex-column">
             {menuItems.map((item) => {
-              // Ambil komponen icon dari item
               const IconComponent = item.icon;
               return (
                 <NavLink
@@ -65,7 +65,7 @@ function SidebarComponent({ isOpen, onClose }) {
                   className={({ isActive }) =>
                     isActive ? "nav-link active" : "nav-link"
                   }
-                  onClick={onClose} // Tutup sidebar setelah klik menu (mobile)
+                  onClick={onClose}
                 >
                   <IconComponent size={18} className="me-3" />
                   {item.label}
@@ -75,7 +75,7 @@ function SidebarComponent({ isOpen, onClose }) {
           </Nav>
         </div>
 
-        {/* Profil user di bagian bawah sidebar */}
+        {/* User Profile Footer */}
         <div className="sidebar-profile">
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="profile-avatar" style={{ borderRadius: '50%', objectFit: 'cover' }} />

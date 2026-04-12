@@ -2,7 +2,7 @@ export const navLinks = [
   {
     id: 1,
     title: "How it works",
-    path: "",
+    path: "#getting-started",
   },
 ];
 

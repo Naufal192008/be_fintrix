@@ -3,6 +3,15 @@ import { api } from "../services/api.js";
 
 const AuthContext = createContext();
 
+const EXCHANGE_RATES = {
+  USD: 1,
+  IDR: 15850,
+  EUR: 0.94,
+  JPY: 153,
+  GBP: 0.79,
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
@@ -15,6 +24,35 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Global Theme Logic
+  useEffect(() => {
+    if (!user) {
+      document.body.className = 'light-theme';
+      return;
+    }
+
+    const applyTheme = (theme) => {
+      let activeTheme = theme;
+      if (theme === 'system') {
+        activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.body.className = activeTheme === 'dark' ? 'dark-theme' : 'light-theme';
+    };
+
+    applyTheme(user.theme || 'system');
+
+    // Listen for system theme changes if set to system
+    if (user.theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e) => {
+        document.body.className = e.matches ? 'dark-theme' : 'light-theme';
+      };
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.theme]);
 
   // Internal helper: clear semua auth state
   const _clearAuth = useCallback(() => {
@@ -36,6 +74,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get("/users/profile");
       setUser(response.data);
     } catch (err) {
+      console.error(err);
       // Token invalid / expired → clear auth
       _clearAuth();
     } finally {
@@ -47,7 +86,6 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
 
   const login = async (email, password) => {
     try {
@@ -70,7 +108,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await api.post("/auth/register", userData);
-      // Setelah register langsung login (backend sudah return token)
+      // Setelah register langsung login
       const { token, refreshToken, ...user } = response.data;
       if (token) {
         localStorage.setItem("fintrix_token", token);
@@ -88,8 +126,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-    } catch {
-      // Tetap lanjut logout walau request gagal
+    } catch (error) {
+      console.error(error);
     } finally {
       _clearAuth();
     }
@@ -99,16 +137,15 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `${API_URL}/auth/google`;
   };
 
-  // Dipanggil dari AuthSuccess.jsx setelah redirect Google OAuth
   const handleGoogleCallback = async (token, refreshToken) => {
     try {
       localStorage.setItem("fintrix_token", token);
       if (refreshToken) localStorage.setItem("fintrix_refresh_token", refreshToken);
-      // Fetch profil setelah token tersimpan
       const response = await api.get("/users/profile");
       setUser(response.data);
       return { success: true, user: response.data };
     } catch (err) {
+      console.error(err);
       _clearAuth();
       return { success: false, error: "Gagal memuat profil." };
     }
@@ -211,6 +248,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  
+  const convertMoney = useCallback((amount, targetCurrency) => {
+    const rate = EXCHANGE_RATES[targetCurrency] || 1;
+    return amount * rate;
+  }, []);
+
+  const formatCurrency = useCallback((amount, options = {}) => {
+    const curr = user?.currency || 'USD';
+    const lang = user?.language === 'id' ? 'id-ID' : 'en-US';
+    const convertedAmount = convertMoney(amount, curr);
+    
+    try {
+      return new Intl.NumberFormat(lang, {
+        style: 'currency',
+        currency: curr,
+        minimumFractionDigits: (curr === 'IDR' || curr === 'JPY') ? 0 : 2,
+        maximumFractionDigits: (curr === 'IDR' || curr === 'JPY') ? 0 : 2,
+        ...options
+      }).format(convertedAmount);
+    } catch {
+      return `${curr} ${convertedAmount.toLocaleString()}`;
+    }
+  }, [user?.currency, user?.language, convertMoney]);
+
+  const t = useCallback((en, id) => {
+    return user?.language === 'id' ? id : en;
+  }, [user?.language]);
+
+  const getCurrencySymbol = useCallback(() => {
+    const curr = user?.currency || 'USD';
+    const symbols = { IDR: 'Rp', USD: '$', EUR: '€', JPY: '¥', GBP: '£' };
+    return symbols[curr] || curr;
+  }, [user?.currency]);
+
   const value = {
     user,
     loading,
@@ -233,6 +305,11 @@ export const AuthProvider = ({ children }) => {
     // 2FA
     enableTwoFactor,
     disableTwoFactor,
+    // Global Utils
+    convertMoney,
+    formatCurrency,
+    getCurrencySymbol,
+    t
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

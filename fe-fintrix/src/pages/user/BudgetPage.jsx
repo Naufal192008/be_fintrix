@@ -4,6 +4,7 @@ import TopNavbarComponent from "../../components/TopNavbarComponent";
 import { Container, Row, Col, Card, Button, Modal, Form, Spinner, Alert } from "react-bootstrap";
 import { Plus, Utensils, Car, LayoutList, Package, AlertTriangle, MoreVertical } from "lucide-react";
 import { budgetAPI } from "../../services/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { BUDGET_CATEGORIES } from "../../constants/categories.js";
 import "../../styles/BudgetPage.css";
 import "../../styles/animations.css";
@@ -24,6 +25,8 @@ const budgetTemplates = [
 ];
 
 function BudgetPage() {
+  const { user, formatCurrency, t, convertMoney, getCurrencySymbol } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [budgets, setBudgets]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -38,19 +41,16 @@ function BudgetPage() {
     year: new Date().getFullYear(),
   });
 
-
-  // ── Fetch budgets dari API ──────────────────────────────────────────────────
   const fetchBudgets = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await budgetAPI.getAll();
-      // Backend sekarang sudah menghitung spent, remaining, dan percent dari transaksi riil
       const mapped = (res.data?.data || []).map((b) => ({
         id:         b._id,
         name:       b.category,
         budget:     b.limitAmount,
-        spent:      b.spent      ?? 0,         // ← dari transaksi riil
+        spent:      b.spent      ?? 0,        
         remaining:  b.remaining  ?? b.limitAmount,
         percent:    b.percent    ?? 0,
         icon:       ICON_MAP[b.category]  || Package,
@@ -58,37 +58,37 @@ function BudgetPage() {
         iconBg:     COLOR_MAP[b.category]?.bg    || "#f3e8ff",
       }));
       setBudgets(mapped);
-    } catch (err) {
+    } catch (err) { console.error(err);
       setError("Gagal memuat budget. Pastikan kamu sudah login.");
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => { fetchBudgets(); }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const remainingMonth = budgets.reduce((acc, b) => acc + (b.budget - b.spent), 0);
   const alerts = budgets
     .map((b) => ({ ...b, pct: Math.round((b.spent / b.budget) * 100) }))
     .filter((b) => b.pct >= 80)
     .sort((a, b) => b.pct - a.pct);
 
-  // ── Add budget ──────────────────────────────────────────────────────────────
   const handleAdd = async () => {
     if (!form.budget) return;
     setSubmitting(true);
     try {
+      const rate = convertMoney(1, user?.currency || 'USD');
       await budgetAPI.save({
         category: form.name,
-        limitAmount: Number(form.budget),
+        limitAmount: Number(form.budget) / rate,
         month: Number(form.month),
         year: Number(form.year),
       });
       setShowModal(false);
       setForm({ name: BUDGET_CATEGORIES[0], budget: "", month: new Date().getMonth() + 1, year: new Date().getFullYear() });
       await fetchBudgets();
-    } catch (err) {
+    } catch (err) { console.error(err);
       alert(err.response?.data?.message || "Gagal menyimpan budget.");
     } finally {
       setSubmitting(false);
@@ -99,13 +99,12 @@ function BudgetPage() {
     if (!window.confirm("Hapus budget ini?")) return;
     try {
       await budgetAPI.delete(id);
-      await fetchBudgets(); // refresh dari server
-    } catch (err) {
+      await fetchBudgets(); 
+    } catch (err) { console.error(err);
       alert("Gagal menghapus budget.");
     }
     setMenuOpen(null);
   };
-
 
   return (
     <div className="d-flex budget-page">
@@ -115,10 +114,9 @@ function BudgetPage() {
         <main className="dashboard-main p-4 p-md-5">
           <Container fluid className="px-0 px-md-3">
 
-            {/* Header */}
             <div className="budget-header mb-4 anim-fade-up anim-d0">
-              <h2 className="fw-bold m-0">Budget</h2>
-              <p className="text-muted mb-0">Plan and manage your monthly spending limits</p>
+              <h2 className="fw-bold m-0">{t("Budget", "Anggaran")}</h2>
+              <p className="text-muted mb-0">{t("Plan and manage your monthly spending limits", "Rencanakan dan pantau batas pengeluaran bulanan Anda")}</p>
             </div>
 
             {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
@@ -130,11 +128,11 @@ function BudgetPage() {
                   <Card.Body className="p-4">
                     <div className="d-flex budget-create-header justify-content-between align-items-start mb-1">
                       <div>
-                        <h5 className="fw-bold text-dark mb-1">Create New Budget</h5>
-                        <p className="text-muted small mb-0">Set up a custom budget or use a template</p>
+                        <h5 className="fw-bold text-dark mb-1">{t("Create New Budget", "Buat Anggaran Baru")}</h5>
+                        <p className="text-muted small mb-0">{t("Set up a custom budget or use a template", "Atur anggaran kustom atau gunakan template")}</p>
                       </div>
                       <Button className="budget-btn-create d-flex align-items-center px-4 py-2" onClick={() => setShowModal(true)}>
-                        <Plus size={17} className="me-1" /> Create Budget
+                        <Plus size={17} className="me-1" /> {t("Create Budget", "Buat Anggaran")}
                       </Button>
                     </div>
                     <Row className="g-3 mt-2">
@@ -155,23 +153,23 @@ function BudgetPage() {
               <Col xs={12} md={4}>
                 <Card className="shadow-sm budget-card h-100 card-hover anim-fade-right anim-d2">
                   <Card.Body className="p-4">
-                    <h5 className="fw-bold text-dark mb-1">Budget Alerts</h5>
-                    <p className="text-muted small mb-3">Categories approaching limit</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Budget Alerts", "Peringatan Anggaran")}</h5>
+                    <p className="text-muted small mb-3">{t("Categories approaching limit", "Kategori yang mendekati batas")}</p>
                     <div className="d-flex flex-column gap-2 mb-4">
-                      {alerts.length === 0 && <div className="text-muted small">All budgets are on track 🎉</div>}
+                      {alerts.length === 0 && <div className="text-muted small">{t("All budgets are on track 🎉", "Semua anggaran aman 🎉")}</div>}
                       {alerts.map((a, i) => (
                         <div key={i} className="p-3 budget-alert-item d-flex align-items-start gap-2">
                           <AlertTriangle size={18} className="mt-1 flex-shrink-0" style={{ color: "#f5a623" }} />
                           <div>
-                            <div className="fw-bold small budget-alert-title">{a.pct}% Used</div>
-                            <div className="text-muted" style={{ fontSize: 12 }}>You have used {a.pct}% of your {a.name} budget</div>
+                            <div className="fw-bold small budget-alert-title">{a.pct}% {t("Used", "Terpakai")}</div>
+                            <div className="text-muted" style={{ fontSize: 12 }}>{t(`You have used ${a.pct}% of your ${a.name} budget`, `Anda telah menggunakan ${a.pct}% dari anggaran ${a.name}`)}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                     <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="small text-muted">Total Budget Set</span>
-                      <span className="fw-bold budget-remaining-value">${budgets.reduce((s, b) => s + b.budget, 0).toLocaleString()}</span>
+                      <span className="small text-muted">{t("Total Budget Set", "Total Anggaran")}</span>
+                      <span className="fw-bold budget-remaining-value">{formatCurrency(budgets.reduce((s, b) => s + b.budget, 0))}</span>
                     </div>
                     <div className="budget-remaining-bar-track">
                       <div className="budget-remaining-bar-fill" />
@@ -184,8 +182,8 @@ function BudgetPage() {
             {/* Budget Cards Grid */}
             <Card className="shadow-sm budget-card card-hover anim-fade-up anim-d3">
               <Card.Body className="p-4">
-                <h5 className="fw-bold text-dark mb-1">Your Budgets</h5>
-                <p className="text-muted small mb-4">Track your spending across different categories</p>
+                <h5 className="fw-bold text-dark mb-1">{t("Your Budgets", "Anggaran Anda")}</h5>
+                <p className="text-muted small mb-4">{t("Track your spending across different categories", "Pantau pengeluaran Anda di berbagai kategori")}</p>
 
                 {loading ? (
                   <div className="text-center py-4">
@@ -194,7 +192,7 @@ function BudgetPage() {
                   </div>
                 ) : budgets.length === 0 ? (
                   <div className="text-center py-4 text-muted">
-                    <p>No budgets yet. Create your first budget!</p>
+                    <p>{t("No budgets yet. Create your first budget!", "Belum ada anggaran. Buat anggaran pertama Anda!")}</p>
                   </div>
                 ) : (
                   <Row className="g-3">
@@ -214,7 +212,7 @@ function BudgetPage() {
                                 </div>
                                 <div>
                                   <div className="fw-bold text-dark">{b.name}</div>
-                                  <div className="text-muted small">Budget: ${b.budget.toLocaleString()}</div>
+                                  <div className="text-muted small">Budget: {formatCurrency(b.budget)}</div>
                                 </div>
                               </div>
                               <div className="position-relative">
@@ -223,22 +221,22 @@ function BudgetPage() {
                                 </button>
                                 {menuOpen === b.id && (
                                   <div className="position-absolute end-0 bg-white shadow budget-context-menu py-1">
-                                    <button className="btn btn-sm w-100 text-start text-danger px-3" onClick={() => handleMenuDelete(b.id)}>Delete</button>
+                                    <button className="btn btn-sm w-100 text-start text-danger px-3" onClick={() => handleMenuDelete(b.id)}>{t("Delete", "Hapus")}</button>
                                   </div>
                                 )}
                               </div>
                             </div>
                             <div className="budget-item-stats">
                               <div className="d-flex justify-content-between mb-1">
-                                <span className="text-muted small">Spent</span>
-                                <span className="fw-bold text-dark">${b.spent.toLocaleString()}</span>
+                                <span className="text-muted small">{t("Spent", "Terpakai")}</span>
+                                <span className="fw-bold text-dark">{formatCurrency(b.spent)}</span>
                               </div>
                               <div className="d-flex justify-content-between mb-1">
-                                <span className="text-muted small">Remaining</span>
-                                <span className="fw-bold budget-item-remaining">${remaining.toLocaleString()}</span>
+                                <span className="text-muted small">{t("Remaining", "Sisa")}</span>
+                                <span className="fw-bold budget-item-remaining">{formatCurrency(remaining)}</span>
                               </div>
                               <div className="d-flex justify-content-between mb-2">
-                                <span className="text-muted small">Progress</span>
+                                <span className="text-muted small">{t("Progress", "Progres")}</span>
                                 <span className="fw-bold small" style={{ color: barColor }}>{pct}%</span>
                               </div>
                             </div>
@@ -258,10 +256,9 @@ function BudgetPage() {
         </main>
       </div>
 
-      {/* Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Create New Budget</Modal.Title>
+          <Modal.Title className="fw-bold">{t("Create New Budget", "Buat Anggaran Baru")}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="px-4 pb-4">
 
@@ -270,40 +267,45 @@ function BudgetPage() {
             <div className="d-flex align-items-start gap-2">
               <span style={{ fontSize: 18 }}>💡</span>
               <div style={{ fontSize: "0.82rem", color: "#166534", lineHeight: 1.6 }}>
-                <strong>Bagaimana Spent dihitung?</strong><br />
-                Nilai <strong>Spent</strong> diambil <em>otomatis</em> dari transaksi expense yang kamu catat
-                di halaman <strong>Transactions</strong>.<br />
-                Pastikan kategori dan bulan transaksi sama dengan budget ini.
+                <strong>{t("How is Spent calculated?", "Bagaimana Terpakai dihitung?")}</strong><br />
+                {t(
+                  "The Spent value is automatically taken from the expense transactions you record in the Transactions page.",
+                  "Nilai Terpakai diambil otomatis dari transaksi pengeluaran yang kamu catat di halaman Transaksi."
+                )}<br />
+                {t(
+                  "Make sure the category and transaction month match this budget.",
+                  "Pastikan kategori dan bulan transaksi sama dengan anggaran ini."
+                )}
               </div>
             </div>
           </div>
 
           <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold">Category</Form.Label>
+            <Form.Label className="small fw-bold">{t("Category", "Kategori")}</Form.Label>
             <Form.Select className="budget-modal-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}>
               {BUDGET_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold">Budget Limit ($)</Form.Label>
+            <Form.Label className="small fw-bold">{t("Budget Limit", "Batas Anggaran")} ({getCurrencySymbol()})</Form.Label>
             <Form.Control type="number" placeholder="e.g. 500" className="budget-modal-input" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
           </Form.Group>
           <Row className="g-3 mb-4">
             <Col xs={6}>
-              <Form.Label className="small fw-bold">Month</Form.Label>
+              <Form.Label className="small fw-bold">{t("Month", "Bulan")}</Form.Label>
               <Form.Select className="budget-modal-input" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })}>
                 {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
+                  <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString(user?.language === 'id' ? 'id-ID' : 'en-US', { month: "long" })}</option>
                 ))}
               </Form.Select>
             </Col>
             <Col xs={6}>
-              <Form.Label className="small fw-bold">Year</Form.Label>
+              <Form.Label className="small fw-bold">{t("Year", "Tahun")}</Form.Label>
               <Form.Control type="number" className="budget-modal-input" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
             </Col>
           </Row>
           <Button className="budget-modal-btn w-100 fw-bold py-2" onClick={handleAdd} disabled={submitting}>
-            {submitting ? <><Spinner size="sm" className="me-2" />Saving...</> : "Save Budget"}
+            {submitting ? <><Spinner size="sm" className="me-2" />{t("Saving...", "Menyimpan...")}</> : t("Save Budget", "Simpan Anggaran")}
           </Button>
         </Modal.Body>
       </Modal>

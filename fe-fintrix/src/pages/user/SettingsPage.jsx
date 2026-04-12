@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SidebarComponent from "../../components/SidebarComponent";
 import TopNavbarComponent from "../../components/TopNavbarComponent";
@@ -11,7 +11,6 @@ import {
 import "../../styles/SettingsPage.css";
 import "../../styles/animations.css";
 
-// Toast notifikasi kecil
 function Toast({ message, type, onClose }) {
   return (
     <div
@@ -32,40 +31,34 @@ function Toast({ message, type, onClose }) {
 }
 
 function SettingsPage() {
-  const { user, logout, updateProfile, deleteAccount, enableTwoFactor, disableTwoFactor } = useAuth();
+  const { user, logout, updateProfile, deleteAccount, enableTwoFactor, disableTwoFactor, t } = useAuth();
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen]     = useState(false);
   const [showPassword, setShowPassword]   = useState(false);
-  const [theme, setTheme]                 = useState("light");
+  const [theme, setTheme]       = useState(user?.theme || "system");
+  const [currency, setCurrency] = useState(user?.currency || "USD");
+  const [language, setLanguage] = useState(user?.language || "en");
 
-  // Form state
   const [name, setName]         = useState(user?.name || "");
   const [email, setEmail]       = useState(user?.email || "");
   const [password, setPassword] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [language, setLanguage] = useState("en");
 
-  // Loading state per aksi
   const [savingProfile, setSavingProfile]   = useState(false);
   const [togglingTwoFa, setTogglingTwoFa]   = useState(false);
   const [deletingAcc, setDeletingAcc]       = useState(false);
 
-  // Toast
-  const [toast, setToast] = useState(null); // { message, type }
+  const [toast, setToast] = useState(null); 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Delete confirm modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const initial  = (user?.name || "A").charAt(0).toUpperCase();
   const photoUrl = user?.profilePicture || user?.avatar || user?.picture || user?.photo || user?.photoUrl || user?.image || user?.profileImageUrl;
-
-  // ─── Handlers ──────────────────────────────────────────────────────────────
 
   const handleLogout = async () => {
     await logout();
@@ -87,6 +80,17 @@ function SettingsPage() {
       showToast("Profile updated successfully!");
     } else {
       showToast(result.error || "Failed to update profile", "error");
+    }
+  };
+
+  const handlePreferenceChange = async (key, val) => {
+    if (key === 'currency') setCurrency(val);
+    if (key === 'language') setLanguage(val);
+    if (key === 'theme') setTheme(val);
+
+    const result = await updateProfile({ [key]: val });
+    if (!result.success) {
+      showToast("Failed to save " + key, "error");
     }
   };
 
@@ -127,21 +131,20 @@ function SettingsPage() {
         <main className="dashboard-main p-4 p-md-5">
           <Container fluid className="px-0 px-md-3">
 
-            {/* Header */}
             <div className="settings-header mb-4 anim-fade-up anim-d0">
-              <h2 className="fw-bold m-0">Settings</h2>
-              <p className="text-muted">Manage your account and application preferences</p>
+              <h2 className="fw-bold m-0">{t("Settings", "Pengaturan")}</h2>
+              <p className="text-muted">{t("Manage your account and application preferences", "Kelola akun dan referensi aplikasi Anda")}</p>
             </div>
 
             <Row className="g-4">
-              {/* LEFT COLUMN */}
+              
               <Col xs={12} lg={5} xl={4}>
 
                 {/* Profile Card */}
                 <Card className="shadow-sm settings-card mb-4 card-hover anim-fade-left anim-d1">
                   <Card.Body className="p-4">
-                    <h5 className="fw-bold text-dark mb-1">Profile Settings</h5>
-                    <p className="text-muted small mb-4">Update your profile information</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Profile Settings", "Pengaturan Profil")}</h5>
+                    <p className="text-muted small mb-4">{t("Update your profile information", "Perbarui informasi profil Anda")}</p>
                     <div className="d-flex align-items-center gap-3">
                       <div className="position-relative flex-shrink-0">
                         {photoUrl ? (
@@ -158,11 +161,11 @@ function SettingsPage() {
                         <p className="text-muted small mb-2">{user?.email || ""}</p>
                         {user?.isVerified ? (
                           <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 600 }}>
-                            <CheckCircle size={13} className="me-1" />Email Verified
+                            <CheckCircle size={13} className="me-1" />{t("Email Verified", "Email Terverifikasi")}
                           </span>
                         ) : (
                           <span style={{ fontSize: "0.75rem", color: "#f59e0b", fontWeight: 600 }}>
-                            <AlertCircle size={13} className="me-1" />Email Not Verified
+                            <AlertCircle size={13} className="me-1" />{t("Email Not Verified", "Email Belum Terverifikasi")}
                           </span>
                         )}
                       </div>
@@ -173,13 +176,13 @@ function SettingsPage() {
                 {/* Security Card: 2FA */}
                 <Card className="shadow-sm settings-card mb-4 card-hover anim-fade-left anim-d2">
                   <Card.Body className="p-4">
-                    <h5 className="fw-bold text-dark mb-1">Security</h5>
-                    <p className="text-muted small mb-4">Two-factor authentication</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Security", "Keamanan")}</h5>
+                    <p className="text-muted small mb-4">{t("Two-factor authentication", "Autentikasi dua faktor")}</p>
                     <div className="d-flex align-items-center justify-content-between mb-3">
                       <div>
-                        <p className="fw-semibold mb-0 small">Two-Factor Auth (2FA)</p>
+                        <p className="fw-semibold mb-0 small">{t("Two-Factor Auth (2FA)", "Autentikasi Dua Faktor (2FA)")}</p>
                         <p className="text-muted" style={{ fontSize: "0.78rem" }}>
-                          {user?.twoFactorEnabled ? "Currently enabled" : "Currently disabled"}
+                          {user?.twoFactorEnabled ? t("Currently enabled", "Saat ini aktif") : t("Currently disabled", "Saat ini nonaktif")}
                         </p>
                       </div>
                       <Button
@@ -193,41 +196,39 @@ function SettingsPage() {
                       >
                         {togglingTwoFa
                           ? <Spinner size="sm" />
-                          : user?.twoFactorEnabled ? "Disable" : "Enable"
+                          : user?.twoFactorEnabled ? t("Disable", "Nonaktifkan") : t("Enable", "Aktifkan")
                         }
                       </Button>
                     </div>
                   </Card.Body>
                 </Card>
 
-                {/* Quick Actions */}
                 <Card className="shadow-sm settings-card mb-4 card-hover anim-fade-left anim-d3">
                   <Card.Body className="p-4">
-                    <h5 className="fw-bold text-dark mb-1">Quick Actions</h5>
-                    <p className="text-muted small mb-4">Account management</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Quick Actions", "Aksi Cepat")}</h5>
+                    <p className="text-muted small mb-4">{t("Account management", "Manajemen akun")}</p>
                     <Button
                       className="settings-btn-logout w-100 d-flex justify-content-center align-items-center fw-bold py-2 mb-3"
                       onClick={handleLogout}
                     >
-                      <LogOut className="me-2" size={18} /> Logout
+                      <LogOut className="me-2" size={18} /> {t("Logout", "Keluar")}
                     </Button>
                     <Button
                       className="settings-btn-delete w-100 d-flex justify-content-center align-items-center fw-bold py-2"
                       onClick={() => { setDeleteConfirmText(""); setShowDeleteModal(true); }}
                     >
-                      <Trash2 className="me-2" size={18} /> Delete Account
+                      <Trash2 className="me-2" size={18} /> {t("Delete Account", "Hapus Akun")}
                     </Button>
                   </Card.Body>
                 </Card>
 
-                {/* Data Secure Banner */}
                 <Card className="shadow-sm settings-secure-banner card-hover-subtle anim-fade-left anim-d4">
                   <Card.Body className="p-4 d-flex align-items-start">
                     <Shield className="settings-secure-icon me-3 flex-shrink-0 mt-1" size={24} />
                     <div>
-                      <h6 className="fw-bold mb-2 text-dark">Your data is secure</h6>
+                      <h6 className="fw-bold mb-2 text-dark">{t("Your data is secure", "Data Anda aman")}</h6>
                       <p className="small mb-0 text-secondary" style={{ lineHeight: 1.5 }}>
-                        All your financial data is encrypted and stored securely. We never share your information with third parties.
+                        {t("All your financial data is encrypted and stored securely. We never share your information with third parties.", "Semua data keuangan Anda dienkripsi dan disimpan dengan aman. Kami tidak pernah membagikan informasi Anda kepada pihak ketiga.")}
                       </p>
                     </div>
                   </Card.Body>
@@ -235,18 +236,16 @@ function SettingsPage() {
 
               </Col>
 
-              {/* RIGHT COLUMN */}
               <Col xs={12} lg={7} xl={8}>
 
-                {/* Account Settings Card */}
                 <Card className="shadow-sm settings-card mb-4 card-hover anim-fade-right anim-d1">
                   <Card.Body className="p-4 p-md-5">
-                    <h5 className="fw-bold text-dark mb-1">Account Settings</h5>
-                    <p className="text-muted small mb-4">Manage your account credentials</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Account Settings", "Pengaturan Akun")}</h5>
+                    <p className="text-muted small mb-4">{t("Manage your account credentials", "Kelola kredensial akun Anda")}</p>
                     <Form onSubmit={handleSaveProfile}>
                       {/* Full Name */}
                       <Form.Group className="mb-3">
-                        <Form.Label className="small text-muted fw-medium mb-1">Full Name</Form.Label>
+                        <Form.Label className="small text-muted fw-medium mb-1">{t("Full Name", "Nama Lengkap")}</Form.Label>
                         <div className="input-group settings-input-group">
                           <span className="input-group-text pe-1 ps-3"><User size={18} /></span>
                           <Form.Control
@@ -254,14 +253,14 @@ function SettingsPage() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="settings-form-control ps-2 py-2"
-                            placeholder="Your full name"
+                            placeholder={t("Your full name", "Nama lengkap Anda")}
                           />
                         </div>
                       </Form.Group>
 
                       {/* Email */}
                       <Form.Group className="mb-3">
-                        <Form.Label className="small text-muted fw-medium mb-1">Email Address</Form.Label>
+                        <Form.Label className="small text-muted fw-medium mb-1">{t("Email Address", "Alamat Email")}</Form.Label>
                         <div className="input-group settings-input-group">
                           <span className="input-group-text pe-1 ps-3"><Mail size={18} /></span>
                           <Form.Control
@@ -269,12 +268,12 @@ function SettingsPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="settings-form-control ps-2 py-2"
-                            placeholder="Your email address"
+                            placeholder={t("Your email address", "Alamat email Anda")}
                           />
                         </div>
                         {user?.provider === "google" && (
                           <Form.Text className="text-muted" style={{ fontSize: "0.75rem" }}>
-                            Connected via Google — email changes require re-verification.
+                            {t("Connected via Google — email changes require re-verification.", "Terhubung melalui Google — perubahan email memerlukan verifikasi ulang.")}
                           </Form.Text>
                         )}
                       </Form.Group>
@@ -282,7 +281,7 @@ function SettingsPage() {
                       {/* New Password */}
                       <Form.Group className="mb-4">
                         <Form.Label className="small text-muted fw-medium mb-1">
-                          New Password <span className="text-muted">(leave blank to keep current)</span>
+                          {t("New Password", "Kata Sandi Baru")} <span className="text-muted">({t("leave blank to keep current", "kosongkan jika tidak ingin diubah")})</span>
                         </Form.Label>
                         <div className="d-flex flex-column flex-sm-row gap-2 settings-pw-row">
                           <div className="input-group settings-input-group flex-grow-1">
@@ -292,7 +291,7 @@ function SettingsPage() {
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               className="settings-form-control ps-2 py-2"
-                              placeholder="New password (min. 8 chars)"
+                              placeholder={t("New password (min. 8 chars)", "Kata sandi baru (min. 8 karakter)")}
                             />
                             <span
                               className="input-group-text settings-pw-toggle ps-1 pe-3"
@@ -311,29 +310,28 @@ function SettingsPage() {
                         className="settings-btn-save w-100 fw-bold py-2 rounded-3"
                       >
                         {savingProfile
-                          ? <><Spinner size="sm" className="me-2" />Saving...</>
-                          : "Save Changes"
+                          ? <><Spinner size="sm" className="me-2" />{t("Saving...", "Menyimpan...")}</>
+                          : t("Save Changes", "Simpan Perubahan")
                         }
                       </Button>
                     </Form>
                   </Card.Body>
                 </Card>
 
-                {/* Preferences Card */}
                 <Card className="shadow-sm settings-card card-hover anim-fade-right anim-d2">
                   <Card.Body className="p-4 p-md-5">
-                    <h5 className="fw-bold text-dark mb-1">Preferences</h5>
-                    <p className="text-muted small mb-4">Manage currency, language and theme</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Preferences", "Preferensi")}</h5>
+                    <p className="text-muted small mb-4">{t("Manage currency, language and theme", "Kelola mata uang, bahasa, dan tema")}</p>
 
                     {/* Currency */}
                     <Form.Group className="mb-3">
-                      <Form.Label className="small fw-bold mb-1 text-dark">Currency</Form.Label>
+                      <Form.Label className="small fw-bold mb-1 text-dark">{t("Currency", "Mata Uang")}</Form.Label>
                       <div className="position-relative">
                         <span className="settings-select-icon"><DollarSign size={16} /></span>
                         <Form.Select
                           className="settings-select ps-5 py-2"
                           value={currency}
-                          onChange={(e) => setCurrency(e.target.value)}
+                          onChange={(e) => handlePreferenceChange('currency', e.target.value)}
                         >
                           <option value="USD">USD — US Dollar</option>
                           <option value="IDR">IDR — Rupiah</option>
@@ -345,13 +343,13 @@ function SettingsPage() {
 
                     {/* Language */}
                     <Form.Group className="mb-4">
-                      <Form.Label className="small fw-bold mb-1 text-dark">Language</Form.Label>
+                      <Form.Label className="small fw-bold mb-1 text-dark">{t("Language", "Bahasa")}</Form.Label>
                       <div className="position-relative">
                         <span className="settings-select-icon"><Globe size={16} /></span>
                         <Form.Select
                           className="settings-select ps-5 py-2"
                           value={language}
-                          onChange={(e) => setLanguage(e.target.value)}
+                          onChange={(e) => handlePreferenceChange('language', e.target.value)}
                         >
                           <option value="en">English</option>
                           <option value="id">Bahasa Indonesia</option>
@@ -361,18 +359,18 @@ function SettingsPage() {
 
                     {/* Theme */}
                     <Form.Group>
-                      <Form.Label className="small fw-bold mb-2 text-dark">Theme</Form.Label>
+                      <Form.Label className="small fw-bold mb-2 text-dark">{t("Theme", "Tema")}</Form.Label>
                       <div className="settings-theme-switcher">
                         {[
-                          { key: "light",  label: "Light",  Icon: Sun },
-                          { key: "dark",   label: "Dark",   Icon: Moon },
-                          { key: "system", label: "System", Icon: Monitor },
-                        ].map(({ key, label, Icon }) => (
+                          { key: "light",  label: t("Light", "Terang"),  Icon: Sun },
+                          { key: "dark",   label: t("Dark", "Gelap"),   Icon: Moon },
+                          { key: "system", label: t("System", "Sistem"), Icon: Monitor },
+                        ].map(({ key, label, Icon }) => ( // eslint-disable-line no-unused-vars
                           <button
                             key={key}
                             type="button"
                             className={`settings-theme-btn ${theme === key ? "settings-theme-btn--active" : "settings-theme-btn--inactive"}`}
-                            onClick={() => setTheme(key)}
+                            onClick={() => handlePreferenceChange('theme', key)}
                           >
                             <Icon size={15} className="me-2 mb-1" /> {label}
                           </button>
@@ -388,37 +386,39 @@ function SettingsPage() {
         </main>
       </div>
 
-      {/* ── Delete Account Modal ─────────────────────────────────────────── */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
         <Modal.Header closeButton className="border-0">
-          <Modal.Title className="fw-bold text-danger">Delete Account</Modal.Title>
+          <Modal.Title className="fw-bold text-danger">{t("Delete Account", "Hapus Akun")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p className="text-muted mb-3">
-            This action is <strong>irreversible</strong>. All your data will be permanently deleted.
-            Type <strong>DELETE</strong> to confirm.
+            {t(
+              "This action is irreversible. All your data will be permanently deleted.",
+              "Tindakan ini tidak dapat dibatalkan. Semua data Anda akan dihapus secara permanen."
+            )}
+            <br />
+            {t("Type DELETE to confirm.", "Ketik DELETE untuk mengonfirmasi.")}
           </p>
           <Form.Control
             type="text"
-            placeholder='Type "DELETE" to confirm'
+            placeholder={t('Type "DELETE" to confirm', 'Ketik "DELETE" untuk mengonfirmasi')}
             value={deleteConfirmText}
             onChange={(e) => setDeleteConfirmText(e.target.value)}
             className="mb-3"
           />
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="light" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button variant="light" onClick={() => setShowDeleteModal(false)}>{t("Cancel", "Batal")}</Button>
           <Button
             variant="danger"
             onClick={handleDeleteAccount}
             disabled={deleteConfirmText !== "DELETE" || deletingAcc}
           >
-            {deletingAcc ? <><Spinner size="sm" className="me-2" />Deleting...</> : "Delete Permanently"}
+            {deletingAcc ? <><Spinner size="sm" className="me-2" />{t("Deleting...", "Menghapus...")}</> : t("Delete Permanently", "Hapus Permanen")}
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* ── Toast ─────────────────────────────────────────────────────────── */}
       {toast && (
         <Toast
           message={toast.message}

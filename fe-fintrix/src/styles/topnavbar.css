@@ -1,13 +1,9 @@
-/* =============================================
-   TOP NAVBAR STYLES
-   - Navbar atas dengan search, notif, dan profil
-   - Responsif: hamburger menu muncul di mobile
-   ============================================= */
+
 
 .top-navbar {
   width: 100%;
   z-index: 1050;
-  /* Override position:fixed dari main.css (.navbar) biar navbar gak nabrak konten */
+  
   position: relative !important;
   background-color: #ffffff !important;
 }
@@ -19,7 +15,7 @@
   padding-right: 40px !important;
 }
 
-/* Pastikan area ikon tidak mengecil saat didorong search bar */
+
 .nav-icons,
 .top-navbar .navbar-nav {
   display: flex !important;
@@ -28,7 +24,7 @@
   align-items: center;
 }
 
-/* Tombol hamburger untuk buka sidebar di mobile */
+
 .hamburger-btn {
   background: none;
   border: none;
@@ -57,7 +53,7 @@
 }
 
 .icon-wrapper.icon-success {
-  background-color: #dcfce7 !important; /* Hijau muda */
+  background-color: #dcfce7 !important; 
 }
 
 .icon-wrapper.icon-success:hover {
@@ -65,7 +61,7 @@
 }
 
 .icon-wrapper.icon-muted {
-  background-color: #f1f5f9 !important; /* Abu-abu muda */
+  background-color: #f1f5f9 !important; 
 }
 
 .icon-wrapper.icon-muted:hover {
@@ -77,7 +73,7 @@
   transform: scale(1.05);
 }
 
-/* Titik notifikasi hijau dengan animasi pulse */
+
 .notification-dot {
   position: absolute;
   top: 8px;
@@ -88,10 +84,10 @@
   border-radius: 50%;
   border: 2px solid white;
   animation: pulse 2s infinite;
-  /* Animasi kedip-kedip */
+  
 }
 
-/* Animasi pulse untuk titik notifikasi */
+
 @keyframes pulse {
 
   0%,
@@ -106,7 +102,7 @@
   }
 }
 
-/* Avatar bulat hijau kecil di navbar */
+
 .avatar-small {
   width: 40px !important;
   height: 40px !important;
@@ -124,7 +120,7 @@
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
 }
 
-/* Hilangkan caret default Bootstrap di dropdown profil */
+
 .profile-dropdown .dropdown-toggle::after {
   display: none !important;
 }
@@ -146,9 +142,7 @@
   cursor: pointer;
 }
 
-/* =============================================
-   RESPONSIVE: Mobile (<768px)
-   ============================================= */
+
 @media (max-width: 767px) {
   .top-navbar .container-fluid {
     padding-right: 16px !important;

@@ -1,8 +1,5 @@
 import axios from "axios";
 
-// ============================================================
-// BASE INSTANCE - REST API (Port 5050, JWT-based)
-// ============================================================
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050/api";
 
 export const api = axios.create({
@@ -13,7 +10,6 @@ export const api = axios.create({
   },
 });
 
-// ── Interceptor: Auto-attach JWT token dari localStorage ─────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("fintrix_token");
@@ -25,7 +21,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Interceptor: Auto-refresh token jika 401 ─────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -44,7 +39,6 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch {
-        // Refresh gagal → clear auth & redirect ke login
         localStorage.removeItem("fintrix_token");
         localStorage.removeItem("fintrix_refresh_token");
         localStorage.removeItem("fintrix_user");
@@ -55,9 +49,6 @@ api.interceptors.response.use(
   }
 );
 
-// ============================================================
-// AUTH APIs
-// ============================================================
 export const authAPI = {
   /** Register user baru */
   register: (name, email, password) =>
@@ -85,9 +76,6 @@ export const authAPI = {
   googleLoginUrl: () => `${BASE_URL}/auth/google`,
 };
 
-// ============================================================
-// USER / PROFILE APIs
-// ============================================================
 export const userAPI = {
   /** Ambil profil user yang sedang login */
   getProfile: () => api.get("/users/profile"),
@@ -108,9 +96,6 @@ export const userAPI = {
   disableTwoFactor: () => api.post("/users/disable-2fa"),
 };
 
-// ============================================================
-// TRANSACTION APIs
-// ============================================================
 export const transactionAPI = {
   /** Ambil semua transaksi milik user */
   getAll: () => api.get("/transactions"),
@@ -122,9 +107,6 @@ export const transactionAPI = {
   delete: (id) => api.delete(`/transactions/${id}`),
 };
 
-// ============================================================
-// ANALYTICS APIs
-// ============================================================
 export const analyticsAPI = {
   /** Ringkasan total income, expense, balance */
   getSummary: () => api.get("/analytics/summary"),
@@ -140,9 +122,6 @@ export const analyticsAPI = {
 };
 
 
-// ============================================================
-// BUDGET APIs
-// ============================================================
 export const budgetAPI = {
   /** Ambil semua budget */
   getAll: () => api.get("/budgets"),
@@ -154,9 +133,20 @@ export const budgetAPI = {
   delete: (id) => api.delete(`/budgets/${id}`),
 };
 
-// ============================================================
-// INVESTMENT APIs
-// ============================================================
+export const goalAPI = {
+  /** Ambil semua goals */
+  getAll: () => api.get("/goals"),
+
+  /** Tambah goal baru */
+  add: (data) => api.post("/goals", data),
+
+  /** Update goal progress */
+  updateProgress: (id, addAmount) => api.put(`/goals/${id}`, { addAmount }),
+
+  /** Reset goal progress */
+  resetProgress: (id) => api.put(`/goals/${id}/reset`),
+};
+
 export const investmentAPI = {
   /** Ambil semua investasi */
   getAll: () => api.get("/investments"),
@@ -171,9 +161,6 @@ export const investmentAPI = {
   delete: (id) => api.delete(`/investments/${id}`),
 };
 
-// ============================================================
-// NOTIFICATION APIs
-// ============================================================
 export const notificationAPI = {
   /** Ambil semua notifikasi */
   getAll: () => api.get("/notifications"),
@@ -185,10 +172,7 @@ export const notificationAPI = {
   markAllRead: () => api.put("/notifications/read-all"),
 };
 
-// ============================================================
-// AI / FINANCIAL BRAIN APIs
-// ============================================================
 export const aiAPI = {
   /** Dapatkan insights dari AI */
-  getInsights: (data) => api.post("/ai/insights", data),
+  getInsights: (data) => api.post("/ai/advice", data),
 };

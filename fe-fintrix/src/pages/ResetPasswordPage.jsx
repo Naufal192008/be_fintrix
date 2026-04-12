@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 import "../styles/auth.css";

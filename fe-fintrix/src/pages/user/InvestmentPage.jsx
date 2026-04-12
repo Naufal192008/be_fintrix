@@ -8,10 +8,10 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 import { investmentAPI } from "../../services/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import "../../styles/InvestmentPage.css";
 import "../../styles/animations.css";
 
-// Warna per tipe aset
 const TYPE_COLORS = {
   "Crypto":      { color: "#339af0", bg: "#e7f5ff" },
   "Stock":       { color: "#20c997", bg: "#e6fcf5" },
@@ -21,12 +21,12 @@ const TYPE_COLORS = {
 const CHART_COLORS = ["#20c997","#339af0","#f5a623","#ff6b6b","#845ef7","#06b6d4"];
 
 /* Custom tooltip untuk growth chart */
-const GrowthTooltip = ({ active, payload, label }) => {
+const GrowthTooltip = ({ active, payload, label, formatCurrency }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.10)", padding: "10px 18px" }}>
         <p style={{ margin: 0, fontSize: 12, color: "#64748b", fontWeight: 600 }}>{label}</p>
-        <p style={{ margin: 0, fontSize: 15, color: "#20c997", fontWeight: 700 }}>${payload[0].value.toLocaleString()}</p>
+        <p style={{ margin: 0, fontSize: 15, color: "#20c997", fontWeight: 700 }}>{formatCurrency(payload[0].value)}</p>
       </div>
     );
   }
@@ -34,6 +34,8 @@ const GrowthTooltip = ({ active, payload, label }) => {
 };
 
 function InvestmentPage() {
+  const { user, formatCurrency, t, convertMoney, getCurrencySymbol } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [portfolio, setPortfolio]     = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -43,14 +45,13 @@ function InvestmentPage() {
   const [submitting, setSubmitting]   = useState(false);
   const [form, setForm]               = useState({ name: "", type: "Crypto", invested: "", current: "" });
 
-  // ── Fetch dari API ──────────────────────────────────────────────────────────
   const fetchInvestments = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await investmentAPI.getAll();
       setPortfolio(res.data?.data || []);
-    } catch (err) {
+    } catch (err) { console.error(err);
       setError("Gagal memuat data investasi. Pastikan kamu sudah login.");
     } finally {
       setLoading(false);
@@ -59,7 +60,6 @@ function InvestmentPage() {
 
   useEffect(() => { fetchInvestments(); }, []);
 
-  // ── Summary metrics dari data portfolio ─────────────────────────────────────
   const { totalInvested, totalCurrent, totalProfit } = useMemo(() => {
     let invested = 0, current = 0;
     portfolio.forEach((inv) => {
@@ -73,11 +73,9 @@ function InvestmentPage() {
     ? ((totalProfit / totalInvested) * 100).toFixed(2)
     : "0.00";
 
-  // ── Best & Worst performer ──────────────────────────────────────────────────
   const best  = portfolio.length > 0 ? [...portfolio].sort((a, b) => b.returnRate - a.returnRate)[0] : null;
   const worst = portfolio.length > 0 ? [...portfolio].sort((a, b) => a.returnRate - b.returnRate)[0] : null;
 
-  // ── Allocation pie chart data ── (grouping by assetType) ───────────────────
   const allocationData = useMemo(() => {
     const byType = {};
     portfolio.forEach((inv) => {
@@ -93,54 +91,65 @@ function InvestmentPage() {
 
   const pieData = allocationData.map((d) => ({ name: d.label, value: Number(d.percent), color: d.color }));
 
-  // ── Growth stub chart (pakai data portfolio sebagai checkpoint) ─────────────
   const growthData = useMemo(() => {
     if (portfolio.length === 0) return [];
-    const months = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
+    
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(monthNames[d.getMonth()]);
+    }
+
     const base = totalInvested;
     const final = totalCurrent;
-    return months.map((month, i) => ({
-      month,
-      val: Math.round(base + ((final - base) * (i / (months.length - 1)))),
-    }));
-  }, [totalInvested, totalCurrent]);
+    
+    return months.map((month, i) => {
+      const progress = i / (months.length - 1);
+      const curve = progress === 0 || progress === 1 ? progress : progress + (Math.sin(progress * Math.PI) * 0.1);
+      
+      return {
+        month,
+        val: Math.round(base + ((final - base) * curve)),
+      };
+    });
+  }, [totalInvested, totalCurrent, portfolio]);
 
-  // ── Summary metric cards ────────────────────────────────────────────────────
   const metrics = [
-    { label: "Total Investment Value", value: `$${totalCurrent.toLocaleString()}`,  change: `+${profitPct}%`, up: true,  icon: DollarSign, cls: "investment-metric-icon--green"  },
-    { label: "Total Profit / Loss",   value: `$${Math.abs(totalProfit).toLocaleString()}`, change: `${totalProfit >= 0 ? "+" : "-"}${Math.abs(parseFloat(profitPct))}%`, up: totalProfit >= 0, icon: TrendingUp,  cls: "investment-metric-icon--green", valCls: totalProfit >= 0 ? "investment-metric-value--profit" : "investment-metric-value--loss" },
-    { label: "Return Rate",            value: `${totalProfit >= 0 ? "+" : ""}${profitPct}%`, change: null, icon: BarChart2,  cls: "investment-metric-icon--purple" },
-    { label: "Number of Assets",       value: String(portfolio.length), change: null, icon: LayoutGrid, cls: "investment-metric-icon--violet" },
+    { label: t("Total Investment Value", "Total Nilai Investasi"), value: formatCurrency(totalCurrent),  change: `+${profitPct}%`, up: true,  icon: DollarSign, cls: "investment-metric-icon--green"  },
+    { label: t("Total Profit / Loss", "Total Laba / Rugi"),   value: formatCurrency(Math.abs(totalProfit)), change: `${totalProfit >= 0 ? "+" : "-"}${Math.abs(parseFloat(profitPct))}%`, up: totalProfit >= 0, icon: TrendingUp,  cls: "investment-metric-icon--green", valCls: totalProfit >= 0 ? "investment-metric-value--profit" : "investment-metric-value--loss" },
+    { label: t("Return Rate", "Tingkat Pengembalian"),            value: `${totalProfit >= 0 ? "+" : ""}${profitPct}%`, change: null, icon: BarChart2,  cls: "investment-metric-icon--purple" },
+    { label: t("Number of Assets", "Jumlah Aset"),       value: String(portfolio.length), change: null, icon: LayoutGrid, cls: "investment-metric-icon--violet" },
   ];
 
-  // ── Add investment ──────────────────────────────────────────────────────────
   const handleAdd = async () => {
     if (!form.name || !form.invested || !form.current) return;
     setSubmitting(true);
     try {
+      const rate = convertMoney(1, user?.currency || 'USD');
       await investmentAPI.add({
         assetName: form.name,
         assetType: form.type,
-        initialAmount: Number(form.invested),
-        currentAmount: Number(form.current),
+        initialAmount: Number(form.invested) / rate,
+        currentAmount: Number(form.current) / rate,
       });
       setShowModal(false);
       setForm({ name: "", type: "Crypto", invested: "", current: "" });
       await fetchInvestments();
-    } catch (err) {
+    } catch (err) { console.error(err);
       alert(err.response?.data?.message || "Gagal menyimpan investasi.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── Delete investment ───────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm("Hapus investasi ini?")) return;
     try {
       await investmentAPI.delete(id);
       setPortfolio((prev) => prev.filter((inv) => inv._id !== id));
-    } catch (err) {
+    } catch (err) { console.error(err);
       alert("Gagal menghapus investasi.");
     }
   };
@@ -153,14 +162,13 @@ function InvestmentPage() {
         <main className="dashboard-main p-4 p-md-5">
           <Container fluid className="px-0 px-md-3">
 
-            {/* Header */}
             <div className="investment-header d-flex flex-column flex-md-row justify-content-between align-items-md-center investment-header-row mb-4 gap-3 anim-fade-up anim-d0">
               <div>
-                <h2 className="fw-bold m-0">Investment</h2>
-                <p className="text-muted mb-0">Track and manage your investment portfolio</p>
+                <h2 className="fw-bold m-0">{t("Investment", "Investasi")}</h2>
+                <p className="text-muted mb-0">{t("Track and manage your investment portfolio", "Pantau dan kelola portofolio investasi Anda")}</p>
               </div>
               <Button className="investment-btn-add d-flex align-items-center" onClick={() => setShowModal(true)}>
-                <Plus size={18} className="me-1" /> Add Investment
+                <Plus size={18} className="me-1" /> {t("Add Investment", "Tambah Investasi")}
               </Button>
             </div>
 
@@ -193,8 +201,8 @@ function InvestmentPage() {
               <Col xs={12} md={8}>
                 <Card className="shadow-sm investment-card h-100 card-hover anim-fade-up anim-d5">
                   <Card.Body className="p-4">
-                    <h5 className="fw-bold text-dark mb-1">Investment Growth</h5>
-                    <p className="text-muted small mb-3">Portfolio value projection based on your data</p>
+                    <h5 className="fw-bold text-dark mb-1">{t("Investment Growth", "Pertumbuhan Investasi")}</h5>
+                    <p className="text-muted small mb-3">{t("Portfolio value projection based on your data", "Proyeksi nilai portofolio berdasarkan data Anda")}</p>
                     <div style={{ width: "100%", height: 220 }}>
                       {growthData.length > 0 ? (
                         <ResponsiveContainer>
@@ -207,8 +215,8 @@ function InvestmentPage() {
                             </defs>
                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} dy={8} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={42} />
-                            <Tooltip content={<GrowthTooltip />} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => formatCurrency(v, { notation: 'compact' })} width={60} />
+                            <Tooltip content={<GrowthTooltip formatCurrency={formatCurrency} />} />
                             <Area type="monotone" dataKey="val" stroke="#20c997" strokeWidth={2.5} fill="url(#investGrad)"
                               dot={{ r: 4, fill: "#20c997", stroke: "#fff", strokeWidth: 2 }}
                               activeDot={{ r: 6, fill: "#20c997", stroke: "#fff", strokeWidth: 2 }}
@@ -218,7 +226,7 @@ function InvestmentPage() {
                         </ResponsiveContainer>
                       ) : (
                         <div className="d-flex align-items-center justify-content-center h-100 text-muted small">
-                          Add investments to see growth chart
+                          {t("Add investments to see growth chart", "Tambah investasi untuk melihat grafik pertumbuhan")}
                         </div>
                       )}
                     </div>
@@ -230,7 +238,7 @@ function InvestmentPage() {
               <Col xs={12} md={4}>
                 <Card className="shadow-sm investment-card h-100 card-hover anim-fade-right anim-d5">
                   <Card.Body className="p-4 d-flex flex-column align-items-center">
-                    <h5 className="fw-bold text-dark mb-3 w-100">Asset Allocation</h5>
+                    <h5 className="fw-bold text-dark mb-3 w-100">{t("Asset Allocation", "Alokasi Aset")}</h5>
                     {allocationData.length > 0 ? (
                       <>
                         <div style={{ width: 180, height: 180 }}>
@@ -255,14 +263,14 @@ function InvestmentPage() {
                               </div>
                               <div className="text-end">
                                 <div className="small fw-bold text-dark">{d.percent}%</div>
-                                <div className="small text-muted">${d.value.toLocaleString()}</div>
+                                <div className="small text-muted">{formatCurrency(d.value)}</div>
                               </div>
                             </div>
                           ))}
                         </div>
                       </>
                     ) : (
-                      <div className="text-muted small text-center py-5">No data yet</div>
+                      <div className="text-muted small text-center py-5">{t("No data yet", "Belum ada data")}</div>
                     )}
                   </Card.Body>
                 </Card>
@@ -276,7 +284,7 @@ function InvestmentPage() {
                   <Card className="investment-best-card shadow-sm border-0 card-hover card-hover-green anim-fade-up anim-d6">
                     <Card.Body className="p-4 d-flex justify-content-between align-items-center">
                       <div>
-                        <p className="small text-muted mb-1">Best Performing Asset</p>
+                        <p className="small text-muted mb-1">{t("Best Performing Asset", "Aset Peforma Terbaik")}</p>
                         <h5 className="fw-bold text-dark mb-1">{best.assetName}</h5>
                         <h3 className="fw-bold mb-0 investment-best-value">+{best.returnRate}% <span style={{ fontSize: 18 }}>↗</span></h3>
                       </div>
@@ -288,7 +296,7 @@ function InvestmentPage() {
                   <Card className="investment-worst-card shadow-sm border-0 card-hover anim-fade-up anim-d7">
                     <Card.Body className="p-4 d-flex justify-content-between align-items-center">
                       <div>
-                        <p className="small text-muted mb-1">Worst Performing Asset</p>
+                        <p className="small text-muted mb-1">{t("Worst Performing Asset", "Aset Peforma Terburuk")}</p>
                         <h5 className="fw-bold text-dark mb-1">{worst.assetName}</h5>
                         <h3 className="fw-bold mb-0 investment-worst-value">{worst.returnRate}% <span style={{ fontSize: 18 }}>↘</span></h3>
                       </div>
@@ -302,24 +310,31 @@ function InvestmentPage() {
             {/* Investment List */}
             <Card className="shadow-sm investment-list-card border-0 card-hover anim-fade-up anim-d7">
               <Card.Body className="p-4">
-                <h5 className="fw-bold text-dark mb-1">Investment List</h5>
-                <p className="text-muted small mb-4">Your current investment portfolio</p>
+                <h5 className="fw-bold text-dark mb-1">{t("Investment List", "Daftar Investasi")}</h5>
+                <p className="text-muted small mb-4">{t("Your current investment portfolio", "Portofolio investasi Anda saat ini")}</p>
 
                 {loading ? (
                   <div className="text-center py-4">
                     <Spinner animation="border" variant="success" />
-                    <p className="mt-3 text-muted small">Loading portfolio...</p>
+                    <p className="mt-3 text-muted small">{t("Loading portfolio...", "Memuat portofolio...")}</p>
                   </div>
                 ) : portfolio.length === 0 ? (
                   <div className="text-center py-4 text-muted">
-                    <p>No investments yet. Add your first investment!</p>
+                    <p>{t("No investments yet. Add your first investment!", "Belum ada investasi. Tambahkan investasi pertama Anda!")}</p>
                   </div>
                 ) : (
                   <div className="table-responsive">
                     <Table hover borderless className="investment-table align-middle mb-0">
                       <thead>
                         <tr>
-                          {["Asset Name","Type","Invested","Current Value","Profit/Loss","Actions"].map((h, i) => (
+                          {[
+                            t("Asset Name", "Nama Aset"),
+                            t("Type", "Tipe"),
+                            t("Invested", "Diinvestasikan"),
+                            t("Current Value", "Nilai Sekarang"),
+                            t("Profit/Loss", "Laba/Rugi"),
+                            t("Actions", "Aksi")
+                          ].map((h, i) => (
                             <th key={i} className="text-secondary fw-bold text-uppercase py-3">{h}</th>
                           ))}
                         </tr>
@@ -342,11 +357,11 @@ function InvestmentPage() {
                                 </div>
                               </td>
                               <td className="text-secondary small py-3">{inv.assetType}</td>
-                              <td className="fw-bold text-dark py-3">${inv.initialAmount.toLocaleString()}</td>
-                              <td className="fw-bold text-dark py-3">${inv.currentAmount.toLocaleString()}</td>
+                              <td className="fw-bold text-dark py-3">{formatCurrency(inv.initialAmount)}</td>
+                              <td className="fw-bold text-dark py-3">{formatCurrency(inv.currentAmount)}</td>
                               <td className="py-3">
                                 <div className={`fw-bold ${inv.profitLoss >= 0 ? "investment-profit-positive" : "investment-profit-negative"}`}>
-                                  {inv.profitLoss >= 0 ? "+" : ""}${inv.profitLoss.toLocaleString()}
+                                  {inv.profitLoss >= 0 ? "+" : ""}{formatCurrency(inv.profitLoss)}
                                 </div>
                                 <div className={`small ${inv.profitLoss >= 0 ? "investment-profit-positive" : "investment-profit-negative"}`}>
                                   {inv.returnRate >= 0 ? "+" : ""}{inv.returnRate}%
@@ -367,13 +382,13 @@ function InvestmentPage() {
                               <tr className="investment-expand-row">
                                 <td colSpan={6} className="px-4 py-3">
                                   <div className="d-flex gap-5 flex-wrap">
-                                    <div><span className="text-muted small">Asset Type</span><div className="fw-bold">{inv.assetType}</div></div>
-                                    <div><span className="text-muted small">Invested</span><div className="fw-bold">${inv.initialAmount.toLocaleString()}</div></div>
-                                    <div><span className="text-muted small">Current Value</span><div className="fw-bold">${inv.currentAmount.toLocaleString()}</div></div>
+                                    <div><span className="text-muted small">{t("Asset Type", "Tipe Aset")}</span><div className="fw-bold">{inv.assetType}</div></div>
+                                    <div><span className="text-muted small">{t("Invested", "Diinvestasikan")}</span><div className="fw-bold">{formatCurrency(inv.initialAmount)}</div></div>
+                                    <div><span className="text-muted small">{t("Current Value", "Nilai Sekarang")}</span><div className="fw-bold">{formatCurrency(inv.currentAmount)}</div></div>
                                     <div>
-                                      <span className="text-muted small">Profit / Loss</span>
+                                      <span className="text-muted small">{t("Profit / Loss", "Laba / Rugi")}</span>
                                       <div className={`fw-bold ${inv.profitLoss >= 0 ? "investment-profit-positive" : "investment-profit-negative"}`}>
-                                        {inv.profitLoss >= 0 ? "+" : ""}${inv.profitLoss.toLocaleString()} ({inv.returnRate}%)
+                                        {inv.profitLoss >= 0 ? "+" : ""}{formatCurrency(inv.profitLoss)} ({inv.returnRate}%)
                                       </div>
                                     </div>
                                   </div>
@@ -393,32 +408,31 @@ function InvestmentPage() {
         </main>
       </div>
 
-      {/* Modal Add Investment */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Add Investment</Modal.Title>
+          <Modal.Title className="fw-bold">{t("Add Investment", "Tambah Investasi")}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="px-4 pb-4">
           <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold">Asset Name</Form.Label>
+            <Form.Label className="small fw-bold">{t("Asset Name", "Nama Aset")}</Form.Label>
             <Form.Control className="investment-modal-input" placeholder="e.g. Apple Inc." value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold">Asset Type</Form.Label>
+            <Form.Label className="small fw-bold">{t("Asset Type", "Tipe Aset")}</Form.Label>
             <Form.Select className="investment-modal-input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
               <option>Crypto</option><option>Stock</option><option>Gold</option><option>Mutual Fund</option>
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label className="small fw-bold">Amount Invested ($)</Form.Label>
+            <Form.Label className="small fw-bold">{t("Amount Invested", "Jumlah Diinvestasikan")} ({getCurrencySymbol()})</Form.Label>
             <Form.Control className="investment-modal-input" type="number" placeholder="0" value={form.invested} onChange={(e) => setForm({ ...form, invested: e.target.value })} />
           </Form.Group>
           <Form.Group className="mb-4">
-            <Form.Label className="small fw-bold">Current Value ($)</Form.Label>
+            <Form.Label className="small fw-bold">{t("Current Value", "Nilai Sekarang")} ({getCurrencySymbol()})</Form.Label>
             <Form.Control className="investment-modal-input" type="number" placeholder="0" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} />
           </Form.Group>
           <Button className="investment-modal-btn w-100 fw-bold py-2" onClick={handleAdd} disabled={submitting}>
-            {submitting ? <><Spinner size="sm" className="me-2" />Saving...</> : "Add to Portfolio"}
+            {submitting ? <><Spinner size="sm" className="me-2" />{t("Saving...", "Menyimpan...")}</> : t("Add to Portfolio", "Tambah ke Portofolio")}
           </Button>
         </Modal.Body>
       </Modal>

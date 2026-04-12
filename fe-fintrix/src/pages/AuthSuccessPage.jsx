@@ -3,12 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { userAPI } from "../services/api";
 
-/**
- * AuthSuccessPage
- * Halaman perantara setelah Google OAuth berhasil.
- * Flow: Google OAuth → backend redirect ke /auth/success?token=XXX → halaman ini
- * → simpan token → fetch profil → redirect ke /dashboard
- */
 function AuthSuccessPage() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("Memproses login Google...");

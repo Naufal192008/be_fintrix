@@ -11,13 +11,13 @@ import {
   ArrowUpRight, Utensils, Tv, Car, TrendingUp, TrendingDown,
   ShoppingCart, Zap, Package
 } from "lucide-react";
-import { analyticsAPI } from "../../services/api.js";
+import { analyticsAPI, aiAPI } from "../../services/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 import "../../styles/dashboard.css";
 import "../../styles/analityc.css";
 import "../../styles/animations.css";
 
-// ─── Konstanta ───────────────────────────────────────────────────────────────
 const CATEGORY_COLORS = [
   "#22c55e","#3b82f6","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#f97316","#ec4899",
 ];
@@ -36,11 +36,14 @@ function getCategoryMeta(name) {
 }
 
 function AnalyticsPage() {
+  const { user, formatCurrency, t } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [summary, setSummary]         = useState(null);
   const [categories, setCategories]   = useState([]);
   const [highest, setHighest]         = useState(null);
   const [monthly, setMonthly]         = useState(null);
+  const [insights, setInsights]       = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState(null);
 
@@ -60,7 +63,6 @@ function AnalyticsPage() {
         setHighest(highestRes.data?.data || null);
         setMonthly(monthlyRes.data?.data || null);
 
-        // Map categories + beri warna
         const rawCategories = categoryRes.data?.data || [];
         const total = rawCategories.reduce((s, c) => s + c.total, 0);
         const mapped = rawCategories.map((item, idx) => ({
@@ -70,18 +72,40 @@ function AnalyticsPage() {
           percent: total > 0 ? `${Math.round((item.total / total) * 100)}%` : "0%",
         }));
         setCategories(mapped);
-      } catch (err) {
+
+        try {
+          const aiRes = await aiAPI.getInsights({
+            balance: summaryRes.data?.data?.balance || 0,
+            income: summaryRes.data?.data?.totalIncome || 0,
+            expenses: summaryRes.data?.data?.totalExpense || 0,
+            topCategory: highestRes.data?.data?.category || 'Lainnya',
+            language: user?.language || 'en'
+          });
+
+          const processedInsights = (aiRes.data?.ai_response || []).map(item => {
+            if (item.text.includes("{SURPLUS}") && item.value !== undefined) {
+              return { ...item, text: item.text.replace("{SURPLUS}", formatCurrency(item.value)) };
+            }
+            return item;
+          });
+          
+          setInsights(processedInsights);
+        } catch (aiErr) {
+          console.error("AI Error:", aiErr);
+        }
+
+      } catch (err) { console.error(err);
         setError("Gagal memuat data analitik.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Chart data ─────────────────────────────────────────────────────────────
   const summaryBarData = summary
-    ? [{ name: "This Month", income: summary.totalIncome, expense: summary.totalExpense }]
+    ? [{ name: t("This Month", "Bulan Ini"), income: summary.totalIncome, expense: summary.totalExpense }]
     : [];
 
   if (loading) {
@@ -111,10 +135,9 @@ function AnalyticsPage() {
         <main className="dashboard-main p-4 p-md-5">
           <Container fluid className="px-0">
 
-            {/* Header */}
             <div className="mb-4 anim-fade-up anim-d0">
-              <h2 className="mb-1 fw-bold tp-title">Analytics</h2>
-              <p className="text-muted mb-0 tp-subtitle">Analyze your financial habits and spending trends</p>
+              <h2 className="mb-1 fw-bold tp-title">{t("Analytics", "Analitik")}</h2>
+              <p className="text-muted mb-0 tp-subtitle">{t("Analyze your financial habits and spending trends", "Analisis kebiasaan finansial dan tren pengeluaran Anda")}</p>
             </div>
 
             {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
@@ -123,9 +146,9 @@ function AnalyticsPage() {
             {summary && (
               <Row className="g-3 mb-4">
                 {[
-                  { label: "Total Income",  value: `$${summary.totalIncome.toLocaleString()}`,  color: "text-success", bg: "bg-success bg-opacity-10", Icon: TrendingUp  },
-                  { label: "Total Expense", value: `$${summary.totalExpense.toLocaleString()}`, color: "text-danger",  bg: "bg-danger bg-opacity-10",  Icon: TrendingDown },
-                  { label: "Net Balance",   value: `$${summary.balance.toLocaleString()}`,      color: summary.balance >= 0 ? "text-success" : "text-danger", bg: "bg-primary bg-opacity-10", Icon: TrendingUp },
+                  { label: t("Total Income", "Total Pemasukan"),  value: formatCurrency(summary.totalIncome),  color: "text-success", bg: "bg-success bg-opacity-10", Icon: TrendingUp  },
+                  { label: t("Total Expense", "Total Pengeluaran"), value: formatCurrency(summary.totalExpense), color: "text-danger",  bg: "bg-danger bg-opacity-10",  Icon: TrendingDown },
+                  { label: t("Net Balance", "Saldo Bersih"),   value: formatCurrency(summary.balance),      color: summary.balance >= 0 ? "text-success" : "text-danger", bg: "bg-primary bg-opacity-10", Icon: TrendingUp },
                 ].map((card, i) => (
                   <Col key={i} xs={12} md={4}>
                     <Card className={`border-0 shadow-sm rounded-4 an-card card-hover anim-fade-up anim-d${i + 1}`}>
@@ -151,8 +174,8 @@ function AnalyticsPage() {
                 {/* 1. Income vs Expense Bar Chart */}
                 <Card className="border-0 shadow-sm rounded-4 an-card card-hover anim-fade-up anim-d1">
                   <Card.Body className="p-4 p-xl-4 pb-xl-3">
-                    <h5 className="fw-bold an-card-title mb-1">Income vs Expense</h5>
-                    <p className="text-muted small mb-4">Your financial overview from transactions</p>
+                    <h5 className="fw-bold an-card-title mb-1">{t("Income vs Expense", "Pemasukan vs Pengeluaran")}</h5>
+                    <p className="text-muted small mb-4">{t("Your financial overview from transactions", "Ikhtisar keuangan Anda dari transaksi")}</p>
                     <div style={{ width: "100%", height: 260 }}>
                       {summaryBarData.length > 0 ? (
                         <ResponsiveContainer>
@@ -160,9 +183,12 @@ function AnalyticsPage() {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
-                            <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} />
-                            <Bar dataKey="income"  fill="#22c55e" radius={[6,6,0,0]} maxBarSize={80} name="Income" />
-                            <Bar dataKey="expense" fill="#ef4444" radius={[6,6,0,0]} maxBarSize={80} name="Expense" />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} 
+                                formatter={(value) => [formatCurrency(value), ""]} 
+                              />
+                            <Bar dataKey="income"  fill="#22c55e" radius={[6,6,0,0]} maxBarSize={80} name={t("Income", "Pemasukan")} />
+                            <Bar dataKey="expense" fill="#ef4444" radius={[6,6,0,0]} maxBarSize={80} name={t("Expense", "Pengeluaran")} />
                           </BarChart>
                         </ResponsiveContainer>
                       ) : (
@@ -172,8 +198,8 @@ function AnalyticsPage() {
                       )}
                     </div>
                     <div className="d-flex justify-content-center gap-4 mt-2 text-muted small fw-medium">
-                      <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-success" /> Income</div>
-                      <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-danger"  /> Expense</div>
+                      <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-success" /> {t("Income", "Pemasukan")}</div>
+                      <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-danger"  /> {t("Expense", "Pengeluaran")}</div>
                     </div>
                   </Card.Body>
                 </Card>
@@ -182,14 +208,14 @@ function AnalyticsPage() {
                 {monthly && (
                   <Card className="border-0 shadow-sm rounded-4 an-card card-hover anim-fade-up anim-d2">
                     <Card.Body className="p-4 p-xl-4 pb-xl-3">
-                      <h5 className="fw-bold an-card-title mb-1">Monthly Expense Statistics</h5>
-                      <p className="text-muted small mb-4">This month vs last month comparison</p>
+                      <h5 className="fw-bold an-card-title mb-1">{t("Monthly Expense Statistics", "Statistik Pengeluaran Bulanan")}</h5>
+                      <p className="text-muted small mb-4">{t("This month vs last month comparison", "Perbandingan bulan ini vs bulan lalu")}</p>
                       <div style={{ width: "100%", height: 180 }}>
                         <ResponsiveContainer>
                           <BarChart
                             data={[
-                              { name: "Last Month", val: monthly.lastMonth },
-                              { name: "This Month", val: monthly.thisMonth },
+                              { name: t("Last Month", "Bulan Lalu"), val: monthly.lastMonth },
+                              { name: t("This Month", "Bulan Ini"), val: monthly.thisMonth },
                             ]}
                             margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
                           >
@@ -198,9 +224,9 @@ function AnalyticsPage() {
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
                             <Tooltip
                               contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
-                              formatter={(v) => [`$${v.toLocaleString()}`, "Expense"]}
+                              formatter={(v) => [formatCurrency(v), t("Expense", "Pengeluaran")]}
                             />
-                            <Bar dataKey="val" fill="#22c55e" radius={[4,4,0,0]} maxBarSize={60} name="Expense" />
+                            <Bar dataKey="val" fill="#22c55e" radius={[4,4,0,0]} maxBarSize={60} name={t("Expense", "Pengeluaran")} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -209,14 +235,14 @@ function AnalyticsPage() {
                           {monthly.changePct >= 0 ? (
                             <>
                               <ArrowUpRight size={16} className="text-danger" />
-                              <span className="text-danger fw-bold small">Spending increased {monthly.changePct}%</span>
-                              <span className="text-muted small">· vs last month</span>
+                              <span className="text-danger fw-bold small">{t("Spending increased", "Pengeluaran naik")} {monthly.changePct}%</span>
+                              <span className="text-muted small">· {t("vs last month", "vs bulan lalu")}</span>
                             </>
                           ) : (
                             <>
                               <ArrowUpRight size={16} className="text-success" style={{ transform: "rotate(90deg)" }} />
-                              <span className="text-success fw-bold small">Spending decreased {Math.abs(monthly.changePct)}%</span>
-                              <span className="text-muted small">· vs last month</span>
+                              <span className="text-success fw-bold small">{t("Spending decreased", "Pengeluaran turun")} {Math.abs(monthly.changePct)}%</span>
+                              <span className="text-muted small">· {t("vs last month", "vs bulan lalu")}</span>
                             </>
                           )}
                         </div>
@@ -227,26 +253,37 @@ function AnalyticsPage() {
 
                 {/* 3. Financial Insights */}
                 <div className="mt-2 anim-fade-up anim-d3">
-                  <h5 className="fw-bold an-card-title mb-1">Financial Insights</h5>
-                  <p className="text-muted small mb-3">Smart recommendations based on your data</p>
+                  <h5 className="fw-bold an-card-title mb-1">{t("Financial Insights", "Wawasan Keuangan")}</h5>
+                  <p className="text-muted small mb-3">{t("Smart recommendations based on your data", "Rekomendasi cerdas berdasarkan data Anda")}</p>
                   <Row className="g-3">
-                    {[
-                      { icon: Utensils, cls: "insight-warning",    iconCls: "text-warning", text: "Track your food spending to stay within budget." },
-                      { icon: Tv,       cls: "insight-good",        iconCls: "text-success", text: "Keep monitoring your entertainment expenses." },
-                      { icon: Car,      cls: "insight-suggestion",  iconCls: "text-primary", text: "Consider reviewing your transportation costs." },
-                    ].map(({ icon: Icon, cls, iconCls, text }, i) => (
-                      <Col key={i} md={4}>
-                        <div className={`an-insight-box ${cls} d-flex align-items-start gap-3 h-100 card-hover-subtle anim-scale-in anim-d${i + 3}`}>
-                          <div className={`an-insight-icon ${iconCls}`}><Icon size={18} /></div>
-                          <p className="mb-0 small fw-medium text-dark">{text}</p>
-                        </div>
-                      </Col>
-                    ))}
+                    {insights.length > 0 ? (
+                      insights.map((item, i) => {
+                        let Icon = Package;
+                        let cls = "insight-suggestion";
+                        let iconCls = "text-primary";
+                        if (item.type === "warning") { Icon = TrendingDown; cls = "insight-warning"; iconCls = "text-warning"; }
+                        else if (item.type === "good") { Icon = TrendingUp; cls = "insight-good"; iconCls = "text-success"; }
+                        else { Icon = Zap; }
+
+                        return (
+                          <Col key={i} md={4}>
+                            <div className={`an-insight-box ${cls} d-flex align-items-start gap-3 h-100 card-hover-subtle anim-scale-in anim-d${i + 3}`}>
+                              <div className={`an-insight-icon ${iconCls}`}><Icon size={18} /></div>
+                              <p className="mb-0 small fw-medium text-dark">{item.text}</p>
+                            </div>
+                          </Col>
+                        );
+                      })
+                    ) : (
+                      <div className="text-muted small px-3">{t("Analyzing your financial data...", "Menganalisis data keuangan Anda...")}</div>
+                    )}
                   </Row>
                   <div className="d-flex align-items-center gap-5 mt-4 mb-2 ps-3">
-                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-warning" /><span className="small fw-bold text-dark">Warning</span></div>
-                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-success" /><span className="small fw-bold text-dark">Good</span></div>
-                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-primary" /><span className="small fw-bold text-dark">Suggestion</span></div>
+                  <div className="d-flex align-items-center flex-wrap gap-4 gap-md-5 mt-4 mb-2 ps-3">
+                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-warning" /><span className="small fw-bold text-dark">{t("Warning", "Peringatan")}</span></div>
+                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-success" /><span className="small fw-bold text-dark">{t("Good", "Bagus")}</span></div>
+                    <div className="d-flex align-items-center gap-2"><span className="an-legend-dot bg-primary" /><span className="small fw-bold text-dark">{t("Suggestion", "Saran")}</span></div>
+                  </div>
                   </div>
                 </div>
               </Col>
@@ -257,8 +294,8 @@ function AnalyticsPage() {
                 {/* 4. Spending by Category — Donut Chart */}
                 <Card className="border-0 shadow-sm rounded-4 an-card card-hover anim-fade-right anim-d1">
                   <Card.Body className="p-4 p-xl-4 pb-4">
-                    <h5 className="fw-bold an-card-title mb-1">Spending by Category</h5>
-                    <p className="text-muted small mb-0">From your actual transactions</p>
+                    <h5 className="fw-bold an-card-title mb-1">{t("Spending by Category", "Pengeluaran per Kategori")}</h5>
+                    <p className="text-muted small mb-0">{t("From your actual transactions", "Dari transaksi aktual Anda")}</p>
 
                     {categories.length > 0 ? (
                       <>
@@ -281,7 +318,7 @@ function AnalyticsPage() {
                               </Pie>
                               <Tooltip
                                 contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                                formatter={(v) => [`$${v.toLocaleString()}`, ""]}
+                                formatter={(v) => [formatCurrency(v), ""]}
                               />
                             </PieChart>
                           </ResponsiveContainer>
@@ -293,7 +330,7 @@ function AnalyticsPage() {
                                 <span className="an-legend-dot flex-shrink-0" style={{ backgroundColor: item.color }} />
                                 <span className="text-muted fw-medium text-truncate">{item.name}</span>
                               </div>
-                              <div className="fw-bold text-dark text-end ms-2" style={{ width: "70px" }}>${item.value.toLocaleString()}</div>
+                              <div className="fw-bold text-dark text-end ms-2" style={{ width: "90px" }}>{formatCurrency(item.value)}</div>
                               <div className="text-muted text-end" style={{ width: "40px" }}>{item.percent}</div>
                             </div>
                           ))}
@@ -304,8 +341,8 @@ function AnalyticsPage() {
                         <div style={{ width: 120, height: 120, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                           <Package size={40} className="text-muted" />
                         </div>
-                        <p className="text-muted small mb-1 fw-medium">No expense data yet.</p>
-                        <p className="text-muted" style={{ fontSize: "0.78rem" }}>Add expense transactions to see breakdown.</p>
+                        <p className="text-muted small mb-1 fw-medium">{t("No expense data yet.", "Belum ada data pengeluaran.")}</p>
+                        <p className="text-muted" style={{ fontSize: "0.78rem" }}>{t("Add expense transactions to see breakdown.", "Tambahkan transaksi pengeluaran untuk melihat rincian.")}</p>
                       </div>
                     )}
                   </Card.Body>
@@ -314,9 +351,9 @@ function AnalyticsPage() {
                 {/* 5. Highest Spending Category */}
                 <Card className="border-0 shadow-sm rounded-4 an-card card-hover anim-fade-right anim-d2">
                   <Card.Body className="p-4 p-xl-4">
-                    <h5 className="fw-bold an-card-title mb-1">Highest Spending Category</h5>
+                    <h5 className="fw-bold an-card-title mb-1">{t("Highest Spending Category", "Kategori Pengeluaran Terbesar")}</h5>
                     <p className="text-muted small mb-4">
-                      {new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+                      {new Date().toLocaleString(user?.language === 'id' ? 'id-ID' : 'en-US', { month: "long", year: "numeric" })}
                     </p>
 
                     {highest ? (
@@ -332,21 +369,21 @@ function AnalyticsPage() {
                             );
                           })()}
                           <div>
-                            <p className="text-muted small mb-0">Category</p>
+                            <p className="text-muted small mb-0">{t("Category", "Kategori")}</p>
                             <h6 className="fw-bold mb-0">{highest.category}</h6>
                           </div>
                         </div>
-                        <p className="text-muted small mb-1">Total Spent</p>
-                        <h3 className="fw-bold text-danger mb-2">${highest.total.toLocaleString()}</h3>
+                        <p className="text-muted small mb-1">{t("Total Spent", "Total Pengeluaran")}</p>
+                        <h3 className="fw-bold text-danger mb-2">{formatCurrency(highest.total)}</h3>
                         <div className="d-flex align-items-center gap-1 small mt-2">
                           <ArrowUpRight size={16} strokeWidth={3} className="text-danger" />
-                          <span className="text-muted ms-1">Highest this month</span>
+                          <span className="text-muted ms-1">{t("Highest this month", "Terbesar bulan ini")}</span>
                         </div>
                       </>
                     ) : (
                       <div className="text-center py-3 text-muted small">
                         <Package size={32} className="mb-2 text-muted" />
-                        <p className="mb-0">No expense data this month yet.</p>
+                        <p className="mb-0">{t("No expense data this month yet.", "Belum ada data pengeluaran bulan ini.")}</p>
                       </div>
                     )}
                   </Card.Body>
@@ -355,22 +392,22 @@ function AnalyticsPage() {
                 {/* 6. Month Comparison */}
                 <Card className="border-0 shadow-sm rounded-4 an-card card-hover anim-fade-right anim-d3">
                   <Card.Body className="p-4 p-xl-4">
-                    <h5 className="fw-bold an-card-title mb-1">Month Comparison</h5>
-                    <p className="text-muted small mb-4">Spending overview</p>
+                    <h5 className="fw-bold an-card-title mb-1">{t("Month Comparison", "Perbandingan Bulanan")}</h5>
+                    <p className="text-muted small mb-4">{t("Spending overview", "Gambaran pengeluaran")}</p>
 
                     {monthly ? (
                       <>
                         <div className="d-flex justify-content-between align-items-center mb-3">
-                          <span className="text-muted small fw-medium">This Month</span>
-                          <span className="fw-bold fs-5 text-dark">${monthly.thisMonth.toLocaleString()}</span>
+                          <span className="text-muted small fw-medium">{t("This Month", "Bulan Ini")}</span>
+                          <span className="fw-bold fs-5 text-dark">{formatCurrency(monthly.thisMonth)}</span>
                         </div>
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                          <span className="text-muted small fw-medium">Last Month</span>
-                          <span className="fw-bold fs-5 text-muted">${monthly.lastMonth.toLocaleString()}</span>
+                          <span className="text-muted small fw-medium">{t("Last Month", "Bulan Lalu")}</span>
+                          <span className="fw-bold fs-5 text-muted">{formatCurrency(monthly.lastMonth)}</span>
                         </div>
                         <hr className="text-muted opacity-25 my-4" />
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="text-dark small fw-bold">Change</span>
+                          <span className="text-dark small fw-bold">{t("Change", "Perubahan")}</span>
                           <div className="d-flex align-items-center gap-1">
                             <ArrowUpRight
                               size={16}
@@ -385,8 +422,8 @@ function AnalyticsPage() {
                         </div>
                         <p className="text-muted small mb-0">
                           {monthly.diff >= 0
-                            ? `You spent $${Math.abs(monthly.diff).toLocaleString()} more this month`
-                            : `You saved $${Math.abs(monthly.diff).toLocaleString()} compared to last month`}
+                            ? t(`You spent ${formatCurrency(Math.abs(monthly.diff))} more this month`, `Anda belanja ${formatCurrency(Math.abs(monthly.diff))} lebih banyak bulan ini`)
+                            : t(`You saved ${formatCurrency(Math.abs(monthly.diff))} compared to last month`, `Anda berhemat ${formatCurrency(Math.abs(monthly.diff))} dibanding bulan lalu`)}
                         </p>
                       </>
                     ) : (

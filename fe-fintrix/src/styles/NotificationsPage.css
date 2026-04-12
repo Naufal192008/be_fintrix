@@ -1,8 +1,6 @@
-/* =============================================
-   NotificationsPage.css – styles for the Notifications page
-   ============================================= */
 
-/* ── Page Wrapper ──────────────────────────── */
+
+
 .notif-page {
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -12,13 +10,13 @@
   overflow-x: hidden;
 }
 
-/* ── Page Header ───────────────────────────── */
+
 .notif-header h2 {
   color: #1a1f36;
   font-size: 1.75rem;
 }
 
-/* ── Filter Bar ────────────────────────────── */
+
 .notif-filter-card {
   border-radius: 16px !important;
   border: none !important;
@@ -64,7 +62,7 @@
   background-color: #e9ecef !important;
 }
 
-/* Action buttons */
+
 .notif-btn-read {
   background-color: #e6fcf5 !important;
   color: #20c997 !important;
@@ -85,7 +83,7 @@
   white-space: nowrap;
 }
 
-/* ── Notification Cards ────────────────────── */
+
 .notif-card {
   border-radius: 16px !important;
   transition: all 0.2s;
@@ -136,7 +134,7 @@
   right: 24px;
 }
 
-/* ── Settings Panel ────────────────────────── */
+
 .notif-settings-card {
   border-radius: 16px !important;
   border: none !important;
@@ -161,7 +159,7 @@
 .notif-setting-title { font-size: 14px; }
 .notif-setting-desc  { font-size: 12px; line-height: 1.4; }
 
-/* Toggle switch green override */
+
 .notif-switch .form-check-input:checked {
   background-color: #20c997 !important;
   border-color:     #20c997 !important;
@@ -184,13 +182,13 @@
   background-color: #17a580 !important;
 }
 
-/* ── Empty State ───────────────────────────── */
+
 .notif-empty-card {
   border-radius: 16px !important;
   border: none !important;
 }
 
-/* ── Responsive ────────────────────────────── */
+
 @media (max-width: 991.98px) {
   .notif-settings-card {
     position: static;

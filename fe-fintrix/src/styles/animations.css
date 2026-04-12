@@ -1,52 +1,45 @@
-/* =============================================
-   animations.css  –  Fintrix Global Animations
-   Shared across all user pages
-   ============================================= */
 
-/* ── Keyframes ─────────────────────────────── */
-
-/** Fade + slide up (default card entrance) **/
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 
-/** Fade in only **/
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/** Fade + slide from left **/
+
 @keyframes fadeSlideLeft {
   from { opacity: 0; transform: translateX(-24px); }
   to   { opacity: 1; transform: translateX(0);     }
 }
 
-/** Fade + slide from right **/
+
 @keyframes fadeSlideRight {
   from { opacity: 0; transform: translateX(24px); }
   to   { opacity: 1; transform: translateX(0);    }
 }
 
-/** Scale in (pop effect) **/
+
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.88); }
   to   { opacity: 1; transform: scale(1);    }
 }
 
-/** Pulse glow (highlight accent) **/
+
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(32, 201, 151, 0.18); }
   50%       { box-shadow: 0 0 0 8px rgba(32, 201, 151, 0);  }
 }
 
-/** Progress bar fill **/
+
 @keyframes progressFill {
   from { width: 0; }
 }
 
-/* ── Utility Animation Classes ─────────────── */
+
 
 .anim-fade-up {
   opacity: 0;
@@ -73,8 +66,8 @@
   animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* ── Staggered Delay Utilities ─────────────── */
-/* Use with any anim-* class: e.g. className="anim-fade-up anim-d1" */
+
+
 
 .anim-d0  { animation-delay: 0ms;   }
 .anim-d1  { animation-delay: 80ms;  }
@@ -86,7 +79,7 @@
 .anim-d7  { animation-delay: 560ms; }
 .anim-d8  { animation-delay: 640ms; }
 
-/* ── Hover Effects (applied to cards) ──────── */
+
 
 .card-hover {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -106,17 +99,17 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07) !important;
 }
 
-/* Accent glow on metric/summary cards */
+
 .card-hover-green:hover {
   box-shadow: 0 8px 28px rgba(32, 201, 151, 0.18) !important;
 }
 
-/* ── Progress bar animation ─────────────────── */
+
 .anim-progress-fill {
   animation: progressFill 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* ── Reduced Motion Override ────────────────── */
+
 @media (prefers-reduced-motion: reduce) {
   .anim-fade-up,
   .anim-fade-in,

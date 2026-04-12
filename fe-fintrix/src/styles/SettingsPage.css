@@ -1,8 +1,6 @@
-/* =============================================
-   SettingsPage.css – styles for the Settings page
-   ============================================= */
 
-/* ── Page Wrapper ──────────────────────────── */
+
+
 .settings-page {
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -12,19 +10,19 @@
   overflow-x: hidden;
 }
 
-/* ── Page Header ───────────────────────────── */
+
 .settings-header h2 {
   color: #1a1f36;
   font-size: 1.75rem;
 }
 
-/* ── Cards (shared) ────────────────────────── */
+
 .settings-card {
   border-radius: 16px !important;
   border: none !important;
 }
 
-/* ── Profile Card ──────────────────────────── */
+
 .settings-avatar {
   width: 80px;
   height: 80px;
@@ -69,7 +67,7 @@
   font-weight: 700;
 }
 
-/* ── Quick Action Buttons ──────────────────── */
+
 .settings-btn-logout {
   background-color: #f1f3f5 !important;
   color: #495057 !important;
@@ -94,7 +92,7 @@
   background-color: #ffe8e6 !important;
 }
 
-/* ── Data Secure Banner ────────────────────── */
+
 .settings-secure-banner {
   background-color: #f0f4ff !important;
   border-radius: 16px !important;
@@ -103,7 +101,7 @@
 
 .settings-secure-icon { color: #3366ff; }
 
-/* ── Account Settings Form ─────────────────── */
+
 .settings-input-group {
   border: 1px solid #dee2e6;
   border-radius: 8px;
@@ -156,7 +154,7 @@
   background-color: #17a580 !important;
 }
 
-/* ── Select Fields ─────────────────────────── */
+
 .settings-select {
   background-color: #f8f9fa !important;
   border: 1px solid #f1f3f5 !important;
@@ -178,7 +176,7 @@
   pointer-events: none;
 }
 
-/* ── Theme Switcher ────────────────────────── */
+
 .settings-theme-switcher {
   background-color: #f1f3f5;
   border-radius: 50px;
@@ -208,7 +206,7 @@
   color: #868e96 !important;
 }
 
-/* ── Responsive ────────────────────────────── */
+
 @media (max-width: 767.98px) {
   .settings-header h2 { font-size: 1.4rem; }
 
