@@ -6,13 +6,21 @@ const notificationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  title: {
+    type: String,
+    required: true
+  },
   message: {
     type: String,
     required: true
   },
+  tag: {
+    type: String,
+    default: 'System'
+  },
   type: {
     type: String,
-    default: 'info' // 'info', 'warning', 'alert'
+    default: 'info' // 'budget', 'transaction', 'reminder', 'investment', 'bill', etc
   },
   isRead: {
     type: Boolean,

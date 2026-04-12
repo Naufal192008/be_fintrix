@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getGoals, addProgress } = require('../controllers/goalController');
-const { isLoggedIn } = require('../middleware/authMiddleware');
+const { addGoal, getGoals, updateGoalProgress, deleteGoal, resetGoal } = require('../controllers/goalController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', isLoggedIn, getGoals);
-router.put('/:id/add', isLoggedIn, addProgress);
+router.post('/', protect, addGoal);
+router.get('/', protect, getGoals);
+router.put('/:id', protect, updateGoalProgress);
+router.put('/:id/reset', protect, resetGoal);
+router.delete('/:id', protect, deleteGoal);
 
 module.exports = router;

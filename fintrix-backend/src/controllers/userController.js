@@ -32,6 +32,9 @@ const updateUserProfile = async (req, res) => {
     // Update fields
     user.name = req.body.name || user.name;
     user.avatar = req.body.avatar || user.avatar;
+    if (req.body.currency) user.currency = req.body.currency;
+    if (req.body.language) user.language = req.body.language;
+    if (req.body.theme) user.theme = req.body.theme;
 
     if (req.body.email && req.body.email !== user.email) {
       // Check if email already exists
@@ -55,7 +58,10 @@ const updateUserProfile = async (req, res) => {
       email: updatedUser.email,
       avatar: updatedUser.avatar,
       isVerified: updatedUser.isVerified,
-      provider: updatedUser.provider
+      provider: updatedUser.provider,
+      currency: updatedUser.currency,
+      language: updatedUser.language,
+      theme: updatedUser.theme
     });
 
   } catch (error) {

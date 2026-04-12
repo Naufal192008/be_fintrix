@@ -35,9 +35,8 @@ router.get('/verify-email/:token', verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 
-// Note: Google OAuth routes (/google dan /google/callback)
-// sudah di-handle langsung di server.js dengan logic yang lebih lengkap
-// (JWT token generation + session save + redirect ke frontend)
+// Google OAuth routes (/google & /google/callback) are handled directly in server.js
+// This manages the full flow (JWT gen -> session save -> frontend redirect)
 
 // Check auth status (via JWT)
 router.get('/status', protect, (req, res) => {

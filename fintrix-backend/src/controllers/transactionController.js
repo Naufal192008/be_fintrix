@@ -20,6 +20,37 @@ exports.addTransaction = async (req, res) => {
       description: description || ''
     });
 
+    // --- TRIGGER NOTIFICATION OTOMATIS ---
+    try {
+      const Notification = require('../models/Notification');
+      
+      // 1. Notifikasi transaksi besar (kita buat trigger untuk SEMUA nominal agar mudah testing)
+      if (amount > 0) {
+        await Notification.create({
+          user: req.user.id,
+          type: 'transaction',
+          title: `New transaction: $${amount}`,
+          message: `A transaction of $${amount} was recorded for ${title}.`,
+          tag: 'Transaction',
+          isRead: false
+        });
+      }
+      
+      // 2. Notifikasi Budget Alert otomatis jika expense di kategori tertentu
+      if (type === 'expense' && ['Food & Dining', 'Shopping', 'Entertainment'].includes(category)) {
+         await Notification.create({
+           user: req.user.id,
+           type: 'budget',
+           title: `Your ${category} budget alert`,
+           message: `You've spent on ${category} just now. Monitor your spending carefully.`,
+           tag: 'Budget Alert',
+           isRead: false
+         });
+      }
+    } catch (notifErr) {
+      console.log('Gagal membuat auto-notification:', notifErr);
+    }
+
     res.status(201).json({ success: true, data: transaction });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
